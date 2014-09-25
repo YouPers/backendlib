@@ -1,6 +1,6 @@
 var log = require('../util/log').logger,
     mongoose = require('mongoose'),
-    db = require('../util/database'),
+    db = require('../database'),
     async = require('async'),
     i18n = require('../util/ypi18n').initialize(),
     _ = require('lodash'),
