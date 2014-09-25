@@ -1,5 +1,5 @@
 module.exports = {
-    test: function () {
-        console.log("lib test function executed");
-    }
+
+    createSwaggeredServer: require('./server').createSwaggeredServer,
+    initializeDb: require('./database').initialize
 };
