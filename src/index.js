@@ -6,7 +6,7 @@ module.exports = {
     scheduler: require('./batch/scheduler'),
     batch: require('./batch/batch'),
 
-    log: require('./util/log'),
+    log: require('./util/log').getLogger,
     error: require('./util/error'),
 
     auth: require('./util/auth'),
