@@ -38,8 +38,93 @@ var roles = {
         al_systemadmin: [roles.systemadmin ]
     };
 
-function getAuth(config) {
 
+function checkAccess(user, accessLevel, callback) {
+    // if we do not have a user, we only allow anonymous
+    if (!user) {
+        if (accessLevel === 'al_all' || accessLevel === 'al_anonymousonly') {
+            if (callback) {
+                return callback();
+            } else {
+                return true;
+            }
+        } else if (Array.isArray(accessLevel) &&
+            (_.contains(accessLevel, roles.anonymous))) {
+            if (callback) {
+                return callback();
+            } else {
+                return true;
+            }
+        } else {
+            if (callback) {
+                return callback(user ? new error.NotAuthorizedError() : new error.UnauthorizedError());
+            } else {
+                return false;
+            }
+
+        }
+    }
+
+    var suppliedRoles = getRolesFromUser(user);
+    if (!Array.isArray(accessLevel)) {
+        accessLevel = accessLevels[accessLevel];
+    }
+
+    if (_.intersection(accessLevel, suppliedRoles).length > 0) {
+        if (callback) {
+            return callback();
+        } else {
+            return true;
+        }
+    } else {
+        if (callback) {
+            return callback(new error.NotAuthorizedError());
+        } else {
+            return false;
+        }
+    }
+}
+
+function getRolesFromUser(user) {
+    var userRoles = [];
+    if (user && user.roles) {
+        userRoles = user.roles;
+    } else if (Array.isArray((user))) {
+        userRoles = user;
+    } else if (_.isString(user)) {
+        userRoles = [user];
+    } else if (!user) {
+        userRoles = [roles.anonymous];
+    }
+    return userRoles;
+}
+
+var isAdminForModel = function isAdminForModel(user, Model) {
+    var validAdminRolesForThisModel = [];
+    if (Array.isArray(Model)) {
+        validAdminRolesForThisModel = Model;
+    } else if (Model.adminRoles && Array.isArray(Model.adminRoles)) {
+        validAdminRolesForThisModel = Model.adminRoles;
+    }
+    var userRoles = getRolesFromUser(user);
+    return (_.intersection(userRoles, validAdminRolesForThisModel).length > 0);
+};
+
+var canAssign = function (loggedInUser, requestedRoles) {
+    requestedRoles = Array.isArray(requestedRoles) ? requestedRoles : [requestedRoles];
+
+    var loggedInRoles = getRolesFromUser(loggedInUser);
+    var canEdit = true;
+    _.forEach(requestedRoles, function (requestedRole) {
+        if (_.intersection(canAssignRole[requestedRole], loggedInRoles).length === 0) {
+            canEdit = false;
+        }
+    });
+    return canEdit;
+};
+
+
+function getAuthHandlers(config) {
 
     function roleBasedAuth(accessLevel) {
         if (!accessLevels[accessLevel]) {
@@ -62,89 +147,8 @@ function getAuth(config) {
         };
     }
 
-    function checkAccess(user, accessLevel, callback) {
-        // if we do not have a user, we only allow anonymous
-        if (!user) {
-            if (accessLevel === 'al_all' || accessLevel === 'al_anonymousonly') {
-                if (callback) {
-                    return callback();
-                } else {
-                    return true;
-                }
-            } else if (Array.isArray(accessLevel) &&
-                (_.contains(accessLevel, roles.anonymous))) {
-                if (callback) {
-                    return callback();
-                } else {
-                    return true;
-                }
-            } else {
-                if (callback) {
-                    return callback(user ? new error.NotAuthorizedError() : new error.UnauthorizedError());
-                } else {
-                    return false;
-                }
 
-            }
-        }
 
-        var suppliedRoles = getRolesFromUser(user);
-        if (!Array.isArray(accessLevel)) {
-            accessLevel = accessLevels[accessLevel];
-        }
-
-        if (_.intersection(accessLevel, suppliedRoles).length > 0) {
-            if (callback) {
-                return callback();
-            } else {
-                return true;
-            }
-        } else {
-            if (callback) {
-                return callback(new error.NotAuthorizedError());
-            } else {
-                return false;
-            }
-        }
-    }
-
-    function getRolesFromUser(user) {
-        var userRoles = [];
-        if (user && user.roles) {
-            userRoles = user.roles;
-        } else if (Array.isArray((user))) {
-            userRoles = user;
-        } else if (_.isString(user)) {
-            userRoles = [user];
-        } else if (!user) {
-            userRoles = [roles.anonymous];
-        }
-        return userRoles;
-    }
-
-    var isAdminForModel = function isAdminForModel(user, Model) {
-        var validAdminRolesForThisModel = [];
-        if (Array.isArray(Model)) {
-            validAdminRolesForThisModel = Model;
-        } else if (Model.adminRoles && Array.isArray(Model.adminRoles)) {
-            validAdminRolesForThisModel = Model.adminRoles;
-        }
-        var userRoles = getRolesFromUser(user);
-        return (_.intersection(userRoles, validAdminRolesForThisModel).length > 0);
-    };
-
-    var canAssign = function (loggedInUser, requestedRoles) {
-        requestedRoles = Array.isArray(requestedRoles) ? requestedRoles : [requestedRoles];
-
-        var loggedInRoles = getRolesFromUser(loggedInUser);
-        var canEdit = true;
-        _.forEach(requestedRoles, function (requestedRole) {
-            if (_.intersection(canAssignRole[requestedRole], loggedInRoles).length === 0) {
-                canEdit = false;
-            }
-        });
-        return canEdit;
-    };
 
     /**
      * checkes whether the supplied credentials are belonging to a valid user in the local database.
@@ -389,15 +393,17 @@ function getAuth(config) {
 
     return {
         roleBasedAuth: roleBasedAuth,
-        isAdminForModel: isAdminForModel,
-        roles: roles,
-        accessLevels: accessLevels,
-        canAssign: canAssign,
-        checkAccess: checkAccess,
         loginAndExchangeTokenRedirect: loginAndExchangeTokenRedirect,
         loginAndExchangeTokenAjax: loginAndExchangeTokenAjax,
         setupPassport: setupPassport
     }
 }
 
-module.exports = getAuth;
+module.exports = {
+    handlers: getAuthHandlers,
+    accessLevels: accessLevels,
+    canAssign: canAssign,
+    checkAccess: checkAccess,
+    isAdminForModel: isAdminForModel,
+    roles: roles
+};
