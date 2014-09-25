@@ -5,16 +5,14 @@ var restify = require("restify"),
     logger = require('./util/log').logger,
     passport = require('passport'),
     swagger = require("swagger-node-restify"),
-    auth = require('./util/auth'),
     ypi18n = require('./util/ypi18n'),
     error = require('./util/error'),
-    _ = require('lodash'),
-    db = require('./util/database');
-
+    _ = require('lodash');
 
 
 module.exports = {
     createSwaggeredServer: function createSwaggerdServer(config) {
+        var auth = require('./util/auth')(config);
 
         var server = restify.createServer({
             name: 'YP Platform Server',
