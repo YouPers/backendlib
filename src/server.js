@@ -12,7 +12,7 @@ var restify = require("restify"),
 
 module.exports = {
     createSwaggeredServer: function createSwaggerdServer(config) {
-        var auth = require('./util/auth')(config);
+        var auth = require('./util/auth').handlers(config);
 
         var server = restify.createServer({
             name: 'YP Platform Server',
