@@ -1,5 +1,6 @@
 var error = require('../util/error'),
-    _ = require('lodash');
+    _ = require('lodash'),
+    auth = require('../util/auth');
 
 function clean(Model, sentJson) {
 
