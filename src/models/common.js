@@ -1,7 +1,7 @@
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
     _ = require('lodash'),
-    auth = require('ypbackendlib').auth,
+    auth = require('../util/auth'),
     swaggerAdapter = require('../util/swaggerMongooseAdapter');
 var timestamps = require('mongoose-timestamp');
 
@@ -205,5 +205,7 @@ module.exports = {
         authorType: "user campaignLead productAdmin coach".split(' '),
         dismissalReason: "activityScheduled activityJoined activityDeleted denied campaignleadAccepted orgadminAccepted".split(' '),
         actionType: "assessment focus".split(' ')
-    }
+    },
+
+    getSwaggerModel: swaggerAdapter.getSwaggerModel
 };

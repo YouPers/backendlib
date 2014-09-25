@@ -42,10 +42,10 @@ module.exports = {
         });
 
 
-        process.on('uncaughtException', function (err) {
-            console.error('Caught uncaught process Exception: ' + err);
-            process.exit(8);
-        });
+//        process.on('uncaughtException', function (err) {
+//            console.error('Caught uncaught process Exception: ' + err);
+//            process.exit(8);
+//        });
 
         server.on('uncaughtException', function (req, res, route, err) {
             req.log.error(err);
