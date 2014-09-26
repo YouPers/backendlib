@@ -38,7 +38,7 @@ var getLogger = function (config) {
 
     var logger = bunyan.createLogger(loggerOptions);
     return logger;
-}
+};
 
 module.exports = {
     getLogger: getLogger

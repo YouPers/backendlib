@@ -396,7 +396,7 @@ function getAuthHandlers(config) {
         loginAndExchangeTokenRedirect: loginAndExchangeTokenRedirect,
         loginAndExchangeTokenAjax: loginAndExchangeTokenAjax,
         setupPassport: setupPassport
-    }
+    };
 }
 
 module.exports = {
