@@ -369,8 +369,8 @@ function getAuthHandlers(config) {
         // setup authentication, currently only HTTP Basic auth over HTTPS is supported
         passport.use(new passportHttp.BasicStrategy(validateLocalUsernamePassword));
         passport.use(new GitHubStrategy({
-                clientID: 'ddfb0568a53ead210f61',
-                clientSecret: 'ee82f353b27509bb1cb9269b26b02b611e528fe6',
+                clientID: config.oauth.github.clientID,
+                clientSecret: config.oauth.github.clientSecret,
                 callbackURL: "http://localhost:8000/auth/github/callback",
                 scope: "user"
             },
@@ -378,8 +378,8 @@ function getAuthHandlers(config) {
         ));
 
         passport.use(new FacebookStrategy({
-                clientID: '1443351149277228',
-                clientSecret: 'd910fee6236a08c7606069f6bb72f626',
+                clientID: config.oauth.facebook.clientID,
+                clientSecret: config.oauth.facebook.clientSecret,
                 callbackURL: "http://localhost:8000/auth/facebook/callback",
                 scope: ["public_profile", "email"],
                 enableProof: false,

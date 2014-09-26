@@ -26,6 +26,8 @@ var initialize = function initialize(config, models, path, extension) {
             }
         });
     }
+
+    return mongoose;
 };
 
 module.exports = {
