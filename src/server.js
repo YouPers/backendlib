@@ -2,7 +2,6 @@ var restify = require("restify"),
     preflightEnabler = require('./corspreflight'),
     longjohn = require("longjohn"),
     fs = require("fs"),
-    logger = require('./util/log').logger,
     passport = require('passport'),
     swagger = require("swagger-node-restify"),
     ypi18n = require('./util/ypi18n'),
@@ -11,11 +10,12 @@ var restify = require("restify"),
 
 
 module.exports = {
-    createSwaggeredServer: function createSwaggerdServer(config) {
+    createSwaggeredServer: function createSwaggerdServer(name, config) {
         var auth = require('./util/auth').handlers(config);
+        var logger = require('./util/log').getLogger(config);
 
         var server = restify.createServer({
-            name: 'YP Platform Server',
+            name: name,
             version: config.version,
             log: logger,
             formatters: {'text/calendar': function(req, res, body) {
