@@ -118,9 +118,10 @@ module.exports = {
                     require(dir + '/' + file)(swagger);
                 }
             });
+            // need to call swagger configure after adding all routes, so swagger adds the documentation endpoints.
+            swagger.configure(config.backendUrl, "0.1");
         };
 
-        swagger.configure(config.backendUrl, "0.1");
         return swagger;
 
     }
