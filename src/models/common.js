@@ -60,10 +60,10 @@ module.exports = {
                 // client has asked for only one locale and we queried the Database to only return this locale
                 // if more than one locale was loaded we return the full struct and expects the client to handle it.
                 .get(function () {
-                    var myValue = this[key + 'I18n'];
-                    var nrOfLocalesLoaded = _.keys(myValue.toObject()).length;
+                    var myValue = this.get(key + 'I18n');
+                    var nrOfLocalesLoaded = _.keys(myValue).length;
                     if (nrOfLocalesLoaded === 1) {
-                        return myValue[_.keys(myValue.toObject())[0]];
+                        return myValue[_.keys(myValue)[0]];
                     } else if (nrOfLocalesLoaded === 0) {
                         // TODO: find a way to deliver a reasonable Fallback in this case, needs adjusting of the querySelector!!!
                         return "MISSING TRANSLATION";
