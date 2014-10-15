@@ -68,7 +68,7 @@ module.exports = {
                         // TODO: find a way to deliver a reasonable Fallback in this case, needs adjusting of the querySelector!!!
                         return "ZZZ_MISSING TRANSLATION";
                     } else {
-                        // many locales loaded, --> the client wants all locales, we give him the full object.
+                        // many locales loaded, --> so we give him a reasonable default
                         return  myValue[defaultLanguage] || myValue['en'] || myValue[_.keys(myValue)[0]];
                     }
                 })
