@@ -66,10 +66,10 @@ module.exports = {
                         return myValue[_.keys(myValue)[0]];
                     } else if (nrOfLocalesLoaded === 0) {
                         // TODO: find a way to deliver a reasonable Fallback in this case, needs adjusting of the querySelector!!!
-                        return "MISSING TRANSLATION";
+                        return "ZZZ_MISSING TRANSLATION";
                     } else {
                         // many locales loaded, --> the client wants all locales, we give him the full object.
-                        return  myValue;
+                        return  myValue[defaultLanguage] || myValue['en'] || myValue[_.keys(myValue)[0]];
                     }
                 })
                 .set(function (value) {
