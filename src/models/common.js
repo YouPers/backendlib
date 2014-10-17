@@ -78,39 +78,42 @@ module.exports = {
                 });
         });
 
-        /**
-         * This Method returns an Object that can be given to any mongoose Database query with a
-         * .select() statement. When you use this selector, the query will return only the passed in locale
-         * for any i18n=true properties. And the JSON Formatter of this schema will then unwrap the i18n objects
-         * into normal localized String.
-         *
-         * @param locale the locale to be loaded.
-         * @param basePath used for recursive calls, do not pass any value when you call this Fn in a controller.
-         * @returns {*} that can be given to mongoose.query.select()
-         */
-        mySchema.statics.getI18nPropertySelector = function (locale, basePath) {
+        if (multilingualValues.length > 0) {
 
-            var selectObj = {};
-            basePath = basePath ? basePath + '.' : '';
+            /**
+             * This Method returns an Object that can be given to any mongoose Database query with a
+             * .select() statement. When you use this selector, the query will return only the passed in locale
+             * for any i18n=true properties. And the JSON Formatter of this schema will then unwrap the i18n objects
+             * into normal localized String.
+             *
+             * @param locale the locale to be loaded.
+             * @param basePath used for recursive calls, do not pass any value when you call this Fn in a controller.
+             * @returns {*} that can be given to mongoose.query.select()
+             */
+            mySchema.statics.getI18nPropertySelector = function (locale, basePath) {
 
-            // add the multilingual Values of this Model
-            _.forEach(multilingualValues, function (prop) {
-                _.forEach(supportedLanguages, function (lng) {
-                    if (lng !== locale) {
-                        selectObj[basePath + prop + 'I18n.' + lng] = 0;
+                var selectObj = {};
+                basePath = basePath ? basePath + '.' : '';
+
+                // add the multilingual Values of this Model
+                _.forEach(multilingualValues, function (prop) {
+                    _.forEach(supportedLanguages, function (lng) {
+                        if (lng !== locale) {
+                            selectObj[basePath + prop + 'I18n.' + lng] = 0;
+                        }
+                    });
+                });
+
+                // recursivly call for all subSchemas and merge the results together
+                _.forEach(definition, function (value, key) {
+                    var propertyType = Array.isArray(value) ? value[0] : value;
+                    if (propertyType instanceof mongoose.Schema) {
+                        _.merge(selectObj, propertyType.statics.getI18nPropertySelector(locale, basePath ? basePath + key : key));
                     }
                 });
-            });
-
-            // recursivly call for all subSchemas and merge the results together
-            _.forEach(definition, function (value, key) {
-                var propertyType = Array.isArray(value) ? value[0] : value;
-                if (propertyType instanceof mongoose.Schema) {
-                    _.merge(selectObj, propertyType.statics.getI18nPropertySelector(locale, basePath ? basePath + key : key));
-                }
-            });
-            return selectObj;
-        };
+                return selectObj;
+            };
+        }
 
         mySchema.statics.adminRoles = [auth.roles.systemadmin];
 
@@ -136,15 +139,15 @@ module.exports = {
                 if (doc.toJsonConfig) {
 
                     // include values from virtuals or manual set flags that are not part of the schema
-                    if(doc.toJsonConfig.include) {
-                        _.forEach(doc.toJsonConfig.include, function(include) {
+                    if (doc.toJsonConfig.include) {
+                        _.forEach(doc.toJsonConfig.include, function (include) {
                             if (doc[include] !== undefined) {
                                 ret[include] = doc[include];
                             }
                         });
                     }
 
-                    if(doc.toJsonConfig.hide) {
+                    if (doc.toJsonConfig.hide) {
                         _.forEach(doc.toJsonConfig.hide, function (propertyToHide) {
                             delete ret[propertyToHide];
                         });
@@ -165,7 +168,7 @@ module.exports = {
         mySchema.plugin(timestamps, {updatedAt: 'updated', createdAt: 'created'
         });
 
-        mySchema.methods.getStatsString = function() {
+        mySchema.methods.getStatsString = function () {
             return this.titleI18n || this.title;
         };
 

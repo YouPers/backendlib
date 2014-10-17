@@ -129,9 +129,17 @@ function _populate(schema, dbquery, paths, locale) {
             // if (ref && (ref.instance && ref.instance === 'ObjectID' || ref.caster && ref.caster.instance === 'ObjectID')) {
 
             var ref = schema.path(p);
-            var modelName, selector;
-            if (ref && ref.options && ref.options.type[0]) {
+            var modelName = undefined;
+            var selector = undefined;
+            var isObjectRef = ref && ref.options && ref.options.type && !_.isArray(ref.options.type);
+            if (isObjectRef) {
+                modelName = ref.options.ref;
+            }
+            var isArrayRef = _.isArray(ref && ref.options && ref.options.type);
+            if (isArrayRef) {
                 modelName = ref.options.type[0].ref;
+            }
+            if (modelName) {
                 selector = mongoose.model(modelName).getI18nPropertySelector && mongoose.model(modelName).getI18nPropertySelector(locale);
             }
             if (selector) {
@@ -308,7 +316,7 @@ var processStandardQueryOptions = function (req, dbquery, Model) {
         dbquery.select(Model.adminAttrsSelector);
     }
 
-    if (Model.getI18nPropertySelector && !req.params.i18n) {
+    if (Model.getI18nPropertySelector) {
         dbquery.select(Model.getI18nPropertySelector(req.locale || 'de'));
     }
 
