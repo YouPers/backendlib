@@ -7,6 +7,18 @@ var initialize = function initialize(config, customModels, customModelPath, exte
 
     var ext = extension || '_model';
 
+    // load models
+    function _loadModels(modelPath, modelNames) {
+        _.forEach(modelNames, function (modelName) {
+            console.log("Loading model: "+modelName + " from: " + modelPath + '/' + modelName + ext);
+            var model = require(modelPath + '/' + modelName + ext);
+            if (model.getSwaggerModel) {
+                swagger.addModels(model.getSwaggerModel());
+            }
+        });
+    }
+
+
     if (mongoose.connection.readyState === 0) {
         // Setup Database Connection
         var connectStr = config.db_prefix + '://';
@@ -18,16 +30,6 @@ var initialize = function initialize(config, customModels, customModelPath, exte
         console.log(connectStr);
         mongoose.connect(connectStr, {server: {auto_reconnect: true}});
 
-        // load custom models
-        function _loadModels(modelPath, modelNames) {
-            _.forEach(modelNames, function (modelName) {
-                console.log("Loading model: "+modelName + " from: " + modelPath + '/' + modelName + ext);
-                var model = require(modelPath + '/' + modelName + ext);
-                if (model.getSwaggerModel) {
-                    swagger.addModels(model.getSwaggerModel());
-                }
-            });
-        }
 
         // load common models
         var commonPath = __dirname + '/models/';
