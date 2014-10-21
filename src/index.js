@@ -12,5 +12,7 @@ module.exports = {
     commmonModels: require('./models/common'),
     mongoose: require('mongoose'),
     i18n: require('./util/ypi18n'),
-    testHelpers: require('./test/testhelpers')
+    testHelpers: require('./test/testhelpers'),
+    image: require('./util/image'),
+    emailSender: require('./util/emailSender')
 };
