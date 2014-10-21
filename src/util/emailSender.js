@@ -1,3 +1,6 @@
+
+var crypto = require('crypto');
+
 module.exports = function (config, templatesDir) {
 
     var log = require('./log').getLogger(config),
@@ -8,6 +11,17 @@ module.exports = function (config, templatesDir) {
         fromDefault = config.email.fromString;
 
     return {
+        encryptLinkToken: function (linkToken) {
+
+            var cipher = crypto.createCipher(config.linkTokenEncryption.algorithm, config.linkTokenEncryption.key);
+            return cipher.update(linkToken, 'utf8', 'hex') + cipher.final('hex');
+        },
+
+        decryptLinkToken: function (token) {
+            var decipher = crypto.createDecipher(config.linkTokenEncryption.algorithm, config.linkTokenEncryption.key);
+            return decipher.update(token, 'hex', 'utf8') + decipher.final('utf8');
+        },
+
         close: function () {
             smtpTransport.close();
         },

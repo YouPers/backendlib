@@ -111,22 +111,28 @@ module.exports = {
         auth.setupPassport(passport);
 
 
-        swagger.addRoutes = function addRoutesFromDirectory(dir, extension) {
-            // add all authorization routes
-            console.log("Initializing common routes: lib/routes/auth_routes.js");
-            require('./routes/auth_routes')(swagger, config);
+        function _addRoutes(routesDir, fileExtension) {
+            console.log('Losding Routes from: ' + routesDir);
+            fs.readdirSync(routesDir).forEach(function (file) {
 
-            console.log("Initializing common routes: lib/routes/ping_routes.js");
-            require('./routes/ping_routes')(swagger, config);
+                if (file.indexOf(fileExtension) !== -1) {
+                    console.log("Initializing route: " + file);
+                    require(routesDir + '/' + file)(swagger, config);
+                }
+            });
+        }
+
+
+        swagger.addRoutes = function addRoutesFromDirectory(dir, extension) {
+
+            // add common routes
+            _addRoutes(__dirname + '/routes', '_route.js');
 
             // add custom routes
             var ext = extension || '_route.js';
-            fs.readdirSync(dir).forEach(function (file) {
-                if (file.indexOf(ext) !== -1) {
-                    console.log("Initializing custom route: " + file);
-                    require(dir + '/' + file)(swagger);
-                }
-            });
+            _addRoutes(dir, ext);
+
+
             // need to call swagger configure after adding all routes, so swagger adds the documentation endpoints.
             swagger.configure(config.backendUrl, "0.1");
         };
