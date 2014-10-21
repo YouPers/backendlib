@@ -280,6 +280,6 @@ module.exports = function (config) {
         passwordResetPostFn: passwordResetPostFn,
         avatarImagePostFn: avatarImagePostFn,
         getAllFn: getAllFn
-    }
+    };
 
 };
