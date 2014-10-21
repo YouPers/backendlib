@@ -3,7 +3,7 @@ var mongoose = require('mongoose'),
     swagger = require("swagger-node-restify");
 
 
-var initialize = function initialize(config, models, path, extension) {
+var initialize = function initialize(config, customModels, customModelPath, extension) {
 
     var ext = extension || '_model';
 
@@ -18,13 +18,23 @@ var initialize = function initialize(config, models, path, extension) {
         console.log(connectStr);
         mongoose.connect(connectStr, {server: {auto_reconnect: true}});
 
-        _.forEach(models, function (modelName) {
-            console.log("Loading model: "+modelName + " from: " + path + '/' + modelName + ext);
-            var model = require(path + '/' + modelName + ext);
-            if (model.getSwaggerModel) {
-                swagger.addModels(model.getSwaggerModel());
-            }
-        });
+        // load custom models
+        function _loadModels(modelPath, modelNames) {
+            _.forEach(modelNames, function (modelName) {
+                console.log("Loading model: "+modelName + " from: " + modelPath + '/' + modelName + ext);
+                var model = require(modelPath + '/' + modelName + ext);
+                if (model.getSwaggerModel) {
+                    swagger.addModels(model.getSwaggerModel());
+                }
+            });
+        }
+
+        // load common models
+        var commonPath = __dirname + '/models/';
+        var commonModelNames = ['profile', 'user'];
+
+        _loadModels(commonPath, commonModelNames);
+        _loadModels(customModelPath, customModels)
     }
 
     return mongoose;
