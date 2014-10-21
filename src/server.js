@@ -110,11 +110,20 @@ module.exports = {
 
         auth.setupPassport(passport);
 
+
         swagger.addRoutes = function addRoutesFromDirectory(dir, extension) {
+            // add all authorization routes
+            console.log("Initializing common routes: lib/routes/auth_routes.js");
+            require('./routes/auth_routes')(swagger, config);
+
+            console.log("Initializing common routes: lib/routes/ping_routes.js");
+            require('./routes/ping_routes')(swagger, config);
+
+            // add custom routes
             var ext = extension || '_route.js';
             fs.readdirSync(dir).forEach(function (file) {
                 if (file.indexOf(ext) !== -1) {
-                    console.log("Initializing routeFile: " + file);
+                    console.log("Initializing custom route: " + file);
                     require(dir + '/' + file)(swagger);
                 }
             });
