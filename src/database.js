@@ -36,7 +36,7 @@ var initialize = function initialize(config, customModels, customModelPath, exte
         var commonModelNames = ['profile', 'user'];
 
         _loadModels(commonPath, commonModelNames);
-        _loadModels(customModelPath, customModels)
+        _loadModels(customModelPath, customModels);
     }
 
     return mongoose;
