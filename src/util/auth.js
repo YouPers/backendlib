@@ -310,7 +310,7 @@ function getAuthHandlers(config) {
                         return done(null, false);
                     }
 
-                    if (user.lastLogin && moment(user.lastLogin).isBefore(moment().startOf('day'))) {
+                    if (!user.lastLogin || (user.lastLogin && moment(user.lastLogin).isBefore(moment().startOf('day')))) {
                         // publish event: first login today
                         user.lastLogin = new Date();
                         user.save();
