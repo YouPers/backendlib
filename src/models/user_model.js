@@ -154,7 +154,7 @@ UserSchema.pre('save', function (next, req, callback) {
             }
         });
         if (!this.avatar) {
-            this.avatar = this.profile.gender === 'male' ? '/assets/img/avatar_man.png' : '/assets/img/avatar_woman.png';
+            this.avatar = this.profile.gender === 'male' ? '/assets/img/default_avatar_man.svg' : '/assets/img/default_avatar_woman.svg';
         }
         return next(callback);
 
