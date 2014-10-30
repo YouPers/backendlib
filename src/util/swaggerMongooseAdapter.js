@@ -11,7 +11,8 @@ function getSwaggerModel(aMongooseModel) {
         'Number': 'long',
         'Boolean': 'boolean',
         'integer': 'long',
-        'Mixed': 'string'
+        'Mixed': 'string',
+        'I18nString': 'string'
     };
 
     var propertyToModelNameMap = {
@@ -19,6 +20,8 @@ function getSwaggerModel(aMongooseModel) {
         "starredIdeas": "StarredIdea",
         "rejectedIdeas": "RejectedIdea"
     };
+
+    var I18N_DESC = 'I18n-String, use "yp-language" HTTP-header to choose language';
 
     var swaggerModels = {};
 
@@ -173,9 +176,16 @@ function getSwaggerModel(aMongooseModel) {
             if (_.indexOf(hiddenProps, propertyName) === -1) {
                 var realTargetModel = targetModel;
                 var realPropertyName = propertyName;
+                var isI18n = false;
                 if (propertyName.indexOf('.') !== -1) {
-                    realTargetModel = nestedSwaggerModels[propertyName.substring(0, _.lastIndexOf(propertyName, '.'))];
-                    realPropertyName = propertyName.substring(_.lastIndexOf(propertyName, '.') + 1);
+                    var nestedModelName = propertyName.substring(0, _.lastIndexOf(propertyName, '.'));
+                    if (nestedModelName.indexOf('I18n') == -1) {
+                        realTargetModel = nestedSwaggerModels[nestedModelName];
+                        realPropertyName = propertyName.substring(_.lastIndexOf(propertyName, '.') + 1);
+                    } else {
+                        realPropertyName = nestedModelName.substring(0, nestedModelName.length - 4);
+                        isI18n = true;
+                    }
                 }
                 var type = path.options.type;
                 var subModelName;
@@ -197,6 +207,9 @@ function getSwaggerModel(aMongooseModel) {
 
 
                 var desc = fieldDescriptions[propertyName] || fieldDescriptions[realTargetModel.id + '.' + propertyName];
+                if (isI18n) {
+                    desc = desc ? desc + ' ,' + I18N_DESC : I18N_DESC;
+                }
                 if (desc) {
                     realTargetModel.properties[realPropertyName].description = desc;
                 }
@@ -211,7 +224,19 @@ function getSwaggerModel(aMongooseModel) {
         });
     }
 
-    addModelPaths(aMongooseModel.schema.paths, aMongooseModel.schema.nested, mainModel);
+    // determine nested model properties, excluding I18nStrings
+    var allNested = aMongooseModel.schema.nested;
+    var realNested = {};
+
+    _.forEach(allNested, function(value, key) {
+        if (key.indexOf('I18n') == -1) {
+            realNested[key.substring(0,key.length)] = value;
+        }
+    })
+
+
+
+    addModelPaths(aMongooseModel.schema.paths, realNested, mainModel);
 
     return swaggerModels;
 }
