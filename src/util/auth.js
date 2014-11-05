@@ -331,7 +331,7 @@ function getAuthHandlers(config) {
                             return err;
                         }
                         return done(null, user, {scope: 'all', roles: user.roles});
-                    })
+                    });
 
                 });
             } catch (err) {

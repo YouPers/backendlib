@@ -179,7 +179,7 @@ function getSwaggerModel(aMongooseModel) {
                 var isI18n = false;
                 if (propertyName.indexOf('.') !== -1) {
                     var nestedModelName = propertyName.substring(0, _.lastIndexOf(propertyName, '.'));
-                    if (nestedModelName.indexOf('I18n') == -1) {
+                    if (nestedModelName.indexOf('I18n') === -1) {
                         realTargetModel = nestedSwaggerModels[nestedModelName];
                         realPropertyName = propertyName.substring(_.lastIndexOf(propertyName, '.') + 1);
                     } else {
@@ -229,10 +229,10 @@ function getSwaggerModel(aMongooseModel) {
     var realNested = {};
 
     _.forEach(allNested, function(value, key) {
-        if (key.indexOf('I18n') == -1) {
+        if (key.indexOf('I18n') === -1) {
             realNested[key.substring(0,key.length)] = value;
         }
-    })
+    });
 
 
 
