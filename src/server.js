@@ -125,12 +125,13 @@ module.exports = {
 
         swagger.addRoutes = function addRoutesFromDirectory(dir, extension) {
 
-            // add common routes
-            _addRoutes(__dirname + '/routes', '_route.js');
-
             // add custom routes
             var ext = extension || '_route.js';
             _addRoutes(dir, ext);
+
+            // add common routes
+            _addRoutes(__dirname + '/routes', '_route.js');
+
 
 
             // need to call swagger configure after adding all routes, so swagger adds the documentation endpoints.
