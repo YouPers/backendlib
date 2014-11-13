@@ -60,16 +60,16 @@ module.exports = {
                 // client has asked for only one locale and we queried the Database to only return this locale
                 // if more than one locale was loaded we return the full struct and expects the client to handle it.
                 .get(function () {
-                    var myValue = this[key + 'I18n'];
-                    var nrOfLocalesLoaded = _.keys(myValue.toObject()).length;
+                    var myValue = this.get(key + 'I18n');
+                    var nrOfLocalesLoaded = _.keys(myValue).length;
                     if (nrOfLocalesLoaded === 1) {
-                        return myValue[_.keys(myValue.toObject())[0]];
+                        return myValue[_.keys(myValue)[0]];
                     } else if (nrOfLocalesLoaded === 0) {
                         // TODO: find a way to deliver a reasonable Fallback in this case, needs adjusting of the querySelector!!!
-                        return "MISSING TRANSLATION";
+                        return "ZZZ_MISSING TRANSLATION";
                     } else {
-                        // many locales loaded, --> the client wants all locales, we give him the full object.
-                        return  myValue;
+                        // many locales loaded, --> so we give him a reasonable default
+                        return  myValue[defaultLanguage] || myValue['en'] || myValue[_.keys(myValue)[0]];
                     }
                 })
                 .set(function (value) {
@@ -78,39 +78,42 @@ module.exports = {
                 });
         });
 
-        /**
-         * This Method returns an Object that can be given to any mongoose Database query with a
-         * .select() statement. When you use this selector, the query will return only the passed in locale
-         * for any i18n=true properties. And the JSON Formatter of this schema will then unwrap the i18n objects
-         * into normal localized String.
-         *
-         * @param locale the locale to be loaded.
-         * @param basePath used for recursive calls, do not pass any value when you call this Fn in a controller.
-         * @returns {*} that can be given to mongoose.query.select()
-         */
-        mySchema.statics.getI18nPropertySelector = function (locale, basePath) {
+        if (multilingualValues.length > 0) {
 
-            var selectObj = {};
-            basePath = basePath ? basePath + '.' : '';
+            /**
+             * This Method returns an Object that can be given to any mongoose Database query with a
+             * .select() statement. When you use this selector, the query will return only the passed in locale
+             * for any i18n=true properties. And the JSON Formatter of this schema will then unwrap the i18n objects
+             * into normal localized String.
+             *
+             * @param locale the locale to be loaded.
+             * @param basePath used for recursive calls, do not pass any value when you call this Fn in a controller.
+             * @returns {*} that can be given to mongoose.query.select()
+             */
+            mySchema.statics.getI18nPropertySelector = function (locale, basePath) {
 
-            // add the multilingual Values of this Model
-            _.forEach(multilingualValues, function (prop) {
-                _.forEach(supportedLanguages, function (lng) {
-                    if (lng !== locale) {
-                        selectObj[basePath + prop + 'I18n.' + lng] = 0;
+                var selectObj = {};
+                basePath = basePath ? basePath + '.' : '';
+
+                // add the multilingual Values of this Model
+                _.forEach(multilingualValues, function (prop) {
+                    _.forEach(supportedLanguages, function (lng) {
+                        if (lng !== locale) {
+                            selectObj[basePath + prop + 'I18n.' + lng] = 0;
+                        }
+                    });
+                });
+
+                // recursivly call for all subSchemas and merge the results together
+                _.forEach(definition, function (value, key) {
+                    var propertyType = Array.isArray(value) ? value[0] : value;
+                    if (propertyType instanceof mongoose.Schema) {
+                        _.merge(selectObj, propertyType.statics.getI18nPropertySelector(locale, basePath ? basePath + key : key));
                     }
                 });
-            });
-
-            // recursivly call for all subSchemas and merge the results together
-            _.forEach(definition, function (value, key) {
-                var propertyType = Array.isArray(value) ? value[0] : value;
-                if (propertyType instanceof mongoose.Schema) {
-                    _.merge(selectObj, propertyType.statics.getI18nPropertySelector(locale, basePath ? basePath + key : key));
-                }
-            });
-            return selectObj;
-        };
+                return selectObj;
+            };
+        }
 
         mySchema.statics.adminRoles = [auth.roles.systemadmin];
 
@@ -136,15 +139,15 @@ module.exports = {
                 if (doc.toJsonConfig) {
 
                     // include values from virtuals or manual set flags that are not part of the schema
-                    if(doc.toJsonConfig.include) {
-                        _.forEach(doc.toJsonConfig.include, function(include) {
+                    if (doc.toJsonConfig.include) {
+                        _.forEach(doc.toJsonConfig.include, function (include) {
                             if (doc[include] !== undefined) {
                                 ret[include] = doc[include];
                             }
                         });
                     }
 
-                    if(doc.toJsonConfig.hide) {
+                    if (doc.toJsonConfig.hide) {
                         _.forEach(doc.toJsonConfig.hide, function (propertyToHide) {
                             delete ret[propertyToHide];
                         });
@@ -165,46 +168,11 @@ module.exports = {
         mySchema.plugin(timestamps, {updatedAt: 'updated', createdAt: 'created'
         });
 
-        mySchema.methods.getStatsString = function() {
+        mySchema.methods.getStatsString = function () {
             return this.titleI18n || this.title;
         };
 
         return mySchema;
-    },
-
-    enums: {
-        // Idea related enums
-        source: "youpers community campaign".split(' '),
-        executiontype: "self group".split(' '),
-        field: "AwarenessAbility Relaxation TimeManagement SocialInteraction WorkStructuring Breaks PhysicalActivity LeisureActivity Nutrition".split(' '),
-        topic: "workLifeBalance",
-        ActivityStatus: "active deleted old".split(' '),
-
-        // ActivityEven enums
-        activityEventStatus: "open done missed".split(' '),
-        activityRecurrenceEndByType: "after on never".split(' '),
-        activityFrequency: "once day week month year".split(' '),
-        activityDeletable: "deletable deletableOnlyFutureEvents notDeletableNoFutureEvents".split(' '),
-        activityEditable: "editable notEditableJoined notEditablePastEvent".split(' '),
-
-        // Assessment related enums
-        questionType: "twoSided leftSided rightSided".split(' '),
-        questionCategory: "generalStresslevel atWork leisureTime stressType stressMeasures".split(' '),
-
-        // Profile related enums
-        gender: "undefined female male".split(' '),
-        maritalStatus: "undefined single unmarried married separated divorced widowed".split(' '),
-
-        // Campaign related enums
-        paymentStatus: "open paid".split(' '),
-        campaignProductType: "CampaignProductType1 CampaignProductType2 CampaignProductType3".split(' '),
-        calendarNotifications: "none 0 300 600 900 1800 3600 7200 86400 172800".split(' '),
-
-        // type of the targeted space for a social interaction
-        targetSpace: "user activity campaign system email".split(' '),
-        authorType: "user campaignLead productAdmin coach".split(' '),
-        dismissalReason: "activityScheduled activityJoined activityDeleted denied campaignleadAccepted orgadminAccepted".split(' '),
-        actionType: "assessment focus".split(' ')
     },
 
     getSwaggerModel: swaggerAdapter.getSwaggerModel

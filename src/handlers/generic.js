@@ -122,16 +122,28 @@ var _addPopulation = function (queryparams, dbquery, locale) {
 // this is suppose to guard against that. See if we can fix it.
 function _populate(schema, dbquery, paths, locale) {
     paths = Array.isArray(paths) ? paths : [paths];
+    var modelName;
+    var selector;
     for (var i = paths.length; i--;) {
         var p = paths[i];
         if (schema && schema.path) {
             // TODO: (RBLU) Don't know why this check is here. Disable this check because it breaks population of deep porperties like 'events.comments', Fix later
             // if (ref && (ref.instance && ref.instance === 'ObjectID' || ref.caster && ref.caster.instance === 'ObjectID')) {
 
+            // reset the variables, otherwise they keep the values from the previous iteration
+            modelName = undefined;
+            selector = undefined;
+
             var ref = schema.path(p);
-            var modelName, selector;
-            if (ref && ref.options && ref.options.type[0]) {
+            var isObjectRef = ref && ref.options && ref.options.type && !_.isArray(ref.options.type);
+            if (isObjectRef) {
+                modelName = ref.options.ref;
+            }
+            var isArrayRef = _.isArray(ref && ref.options && ref.options.type);
+            if (isArrayRef) {
                 modelName = ref.options.type[0].ref;
+            }
+            if (modelName) {
                 selector = mongoose.model(modelName).getI18nPropertySelector && mongoose.model(modelName).getI18nPropertySelector(locale);
             }
             if (selector) {
@@ -308,7 +320,7 @@ var processStandardQueryOptions = function (req, dbquery, Model) {
         dbquery.select(Model.adminAttrsSelector);
     }
 
-    if (Model.getI18nPropertySelector && !req.params.i18n) {
+    if (Model.getI18nPropertySelector) {
         dbquery.select(Model.getI18nPropertySelector(req.locale || 'de'));
     }
 

@@ -175,7 +175,8 @@ function getAuthHandlers(config) {
             if (!user.validPassword(password)) {
                 return done(null, false);
             }
-            return done(null, user);
+
+            return _checkLastLogin(user, done);
         });
     };
 
@@ -290,6 +291,21 @@ function getAuthHandlers(config) {
         }
     );
 
+    function _checkLastLogin(user, cb) {
+        if (!user.lastLogin || (user.lastLogin && moment(user.lastLogin).isBefore(moment().startOf('day')))) {
+            // publish event: first login today
+            user.lastLogin = new Date();
+            user.save(function(err, user) {
+                if (err) {
+                    return err;
+                }
+                mongoose.model('User').emit('User:firstLoginToday', user);
+                return cb(null, user);
+            });
+        } else {
+            return cb(null, user);
+        }
+    }
 
     function _validateBearerToken(token, done) {
         if (token) {
@@ -310,14 +326,13 @@ function getAuthHandlers(config) {
                         return done(null, false);
                     }
 
-                    if (user.lastLogin && moment(user.lastLogin).isBefore(moment().startOf('day'))) {
-                        // publish event: first login today
-                        user.lastLogin = new Date();
-                        user.save();
-                        mongoose.model('User').emit('User:firstLoginToday', user);
-                    }
+                    _checkLastLogin(user, function(err) {
+                        if (err) {
+                            return err;
+                        }
+                        return done(null, user, {scope: 'all', roles: user.roles});
+                    });
 
-                    return done(null, user, {scope: 'all', roles: user.roles});
                 });
             } catch (err) {
                 return done(err);
