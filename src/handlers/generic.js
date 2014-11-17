@@ -3,8 +3,7 @@ var error = require('../util/error'),
     mongoose = require('mongoose'),
     ObjectId = mongoose.Schema.ObjectId,
     handlerUtils = require('./handlerUtils'),
-    auth = require('../util/auth'),
-    log = require('../util/log').logger;
+    auth = require('../util/auth');
 
 ////////////////////////////////////
 // helper functions
@@ -365,7 +364,6 @@ function deepPopulate(doc, pathListString, options, callback) {
                         options: options
                     }
                 ];
-                log.debug("generic.js:deepPopulate: Populating field '" + lastPathBit + "' of " + listOfDocsToPopulate.length + " " + model.modelName + "(s)");
                 model.populate(listOfDocsToPopulate, pathRequest, function (err, results) {
                     if (err) {
                         return callback(err);
