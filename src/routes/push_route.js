@@ -1,12 +1,9 @@
-var mongoose = require('mongoose'),
-    User = mongoose.model('User'),
-    generic = require('../handlers/generic'),
-    error = require('../util/error');
+var error = require('../util/error');
 
 module.exports = function (swagger, config) {
 
     var pushSender = require('../util/push')(config);
-    baseUrl = '/push',
+    var baseUrl = '/push';
 
 
     swagger.addOperation({

@@ -22,7 +22,7 @@ module.exports = function(config) {
 
         var androidRegistrationIds =
             _.chain(user.profile.devices)
-                .filter(function(dev) {return dev.deviceType === 'android'})
+                .filter(function(dev) {return dev.deviceType === 'android';})
                 .pluck('token')
                 .value();
 
@@ -35,5 +35,5 @@ module.exports = function(config) {
 
     return {
         sendPush: sendPush
-    }
-}
+    };
+};
