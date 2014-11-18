@@ -25,8 +25,8 @@ module.exports = function (swagger, config) {
                 }
                 res.send(result);
                 return next();
-            })
+            });
         }
 
     });
-}
+};

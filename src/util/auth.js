@@ -369,7 +369,7 @@ function getAuthHandlers(config) {
             }
             return cb();
         });
-    };
+    }
 
     function loginAndExchangeTokenRedirect(req, res, next) {
         if (!req.user) {
