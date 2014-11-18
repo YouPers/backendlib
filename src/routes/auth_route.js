@@ -107,8 +107,8 @@ module.exports = function (swagger, config) {
             params: [
                 swagger.headerParam("Authentication", "HTTP Basic Auth credentials or HTTP Bearer Token", "string", false),
                 swagger.bodyParam("Device Information",
-                    "Information about the user's mobile device, including the id needed for push notifications"),
-                "DeviceInfo", false],
+                    "Information about the user's mobile device, including the id needed for push notifications", "Device"),
+                ],
             responseClass: "User",
             "errorResponses": [],
             "beforeCallbacks": [],
