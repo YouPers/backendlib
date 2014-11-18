@@ -351,6 +351,26 @@ function getAuthHandlers(config) {
         };
     }
 
+
+    function _storeDevice(user, sentDevice, cb) {
+        var devices = user.profile && user.profile.devices;
+        // check if this device is already registered
+        if (_.any(devices, function (storedDevice) {
+                return storedDevice.token === sentDevice.token;
+            })) {
+            // this device is already stored
+            return cb();
+        }
+
+        devices.push(sentDevice);
+        user.profile.save(function (err, savedProfile) {
+            if (err) {
+                return cb(err);
+            }
+            return cb();
+        });
+    };
+
     function loginAndExchangeTokenRedirect(req, res, next) {
         if (!req.user) {
             return error.handleError(new Error('User must be defined at this point'), next);
@@ -367,6 +387,14 @@ function getAuthHandlers(config) {
             return error.handleError(new Error('User must be defined at this point'), next);
         }
         req.log.trace({user: req.user}, '/login: user authenticated');
+
+        if (req.body && req.body.device) {
+            _storeDevice(req.user, req.body.device, function (err) {
+                if (err) {
+                    req.log(err);
+                }
+            });
+        }
 
         var tokenInfo = _calculateToken(req.user);
 

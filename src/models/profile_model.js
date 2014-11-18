@@ -21,6 +21,12 @@ var ProfileSchema = common.newSchema({
     gender: { type: String, enum: enums.gender, default: "undefined" },
     birthDate: { type: Date },
     campaign: {type:  Schema.Types.ObjectId, ref:'Campaign'},
+    devices: [{
+        deviceType: {type: String, required: true, enum: ['ios', 'android']},
+        token: {type: String, required: true},
+        osVersion: {type: String},
+        model: {type: String}
+    }],
     homeAddress: {
         street: { type: String, trim: true },
         houseNumber: { type: String, trim: true },
