@@ -124,6 +124,7 @@ module.exports = {
          */
         mySchema.set('toJSON', {
             transform: function (doc, ret, options) {
+                if (!ret) {return;}
                 ret.id = ret._id;
                 delete ret._id;
 
