@@ -388,8 +388,10 @@ function getAuthHandlers(config) {
         }
         req.log.trace({user: req.user}, '/login: user authenticated');
 
-        if (req.body && req.body.device) {
-            _storeDevice(req.user, req.body.device, function (err) {
+        if (req.body) {
+            var device = req.body.device || (req.body && req.body.deviceType && req.body.token && req.body);
+
+            _storeDevice(req.user, device, function (err) {
                 if (err) {
                     req.log(err);
                 }
