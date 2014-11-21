@@ -104,7 +104,11 @@ module.exports = function (swagger, config) {
             notes: "validates the passed credentials and returns the user object belonging to the credentials",
             summary: "currently supports HTTP Basic Auth and Bearer Token over HTTPS",
             method: "POST",
-            params: [swagger.headerParam("Authentication", "HTTP Basic Auth credentials", "string", true)],
+            params: [
+                swagger.headerParam("Authentication", "HTTP Basic Auth credentials or HTTP Bearer Token", "string", false),
+                swagger.bodyParam("Device Information",
+                    "Information about the user's mobile device, including the id needed for push notifications", "Device", false),
+                ],
             responseClass: "User",
             "errorResponses": [],
             "beforeCallbacks": [],
