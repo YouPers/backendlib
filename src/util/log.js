@@ -1,5 +1,6 @@
 var bunyan = require('bunyan');
 var bsyslog = require('bunyan-syslog');
+var bLogstashTcp = require('bunyan-logstash-tcp');
 
 var getLogger = function (config) {
 
@@ -20,7 +21,7 @@ var getLogger = function (config) {
 
     if (logConf.syslog) {
         var mySyslogStream = {
-            level: 'debug',
+            level: logConf.syslog.level || 'debug',
             type: 'raw',
             stream: bsyslog.createBunyanStream({
                 type: 'sys',
@@ -31,6 +32,19 @@ var getLogger = function (config) {
         };
         loggerOptions.streams.push(mySyslogStream);
     }
+
+    if (logConf.logstash) {
+        var myLogstashStream = {
+                level: logConf.logstash.level || 'debug',
+                type: "raw",
+                stream: bLogstashTcp.createStream({
+                    host: logConf.logstash.host || 'localhost',
+                    port: logConf.logstash.port || 5001
+                })
+            };
+        loggerOptions.streams.push(myLogstashStream);
+    }
+
 
     if (logConf.stream) {
         loggerOptions.streams.push(logConf.stream);
