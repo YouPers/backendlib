@@ -47,7 +47,7 @@ module.exports = function (swagger, config) {
                 user: req.user.id,
                 username: req.user.username
             };
-            log.child(options).error(errorObj);
+            log.child(options).error(errorObj, 'CLIENT error posted to /errors');
 
             res.send(200);
             return next();
