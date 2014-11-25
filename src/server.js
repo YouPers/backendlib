@@ -18,9 +18,8 @@ module.exports = {
             name: name,
             version: config.version,
             log: logger,
-            formatters: {'text/calendar': function(req, res, body) {
+            formatters: {'text/calendar; q=0.1': function(req, res, body) {
 
-                // TODO: this is wrong  FIX ME, cannot reliable reproduce why sometimes it goes through this formatter!!!
                 // it seems, that in some error cases restify chooses this formatter to format errors, which does
                 // clearly not make any sense. need to reproduce and trace through the restify code, that chooses the
                 // formatter as soon as we can reliable reproduce.
@@ -37,7 +36,7 @@ module.exports = {
         // setup better error stacktraces
 
         server.pre(function (request, response, next) {
-            request.log.debug({req: request}, 'start processing request');
+            request.log.debug({req_id: request.getId(), req: request}, 'start processing request');
             return next();
         });
 
@@ -62,6 +61,8 @@ module.exports = {
                     req.log.info({requestbody: req.body});
                 }
                 req.log.info({err: err});
+            } else if (req.method === 'POST' || req.method === 'PUT') {
+                req.log.debug({requestbody: req.body});
             }
         });
 
