@@ -60,7 +60,7 @@ module.exports = {
                 if (req.body) {
                     req.log.info({requestbody: req.body}, 'ERROR: triggering request body');
                 }
-                req.log.info({err: err});
+                req.log.info({err: err}, 'ERROR: stack trace');
             } else if (req.method === 'POST' || req.method === 'PUT') {
                 req.log.debug({requestbody: req.body}, 'POST/PUT: body');
             }
