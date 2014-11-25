@@ -56,13 +56,13 @@ module.exports = {
         server.on('after', function (req, res, route, err) {
             req.log.debug({res: res}, "finished processing request");
             if (err && !err.doNotLog) {
-                req.log.info({req: req});
+                req.log.info({req: req}, 'ERROR: triggering request');
                 if (req.body) {
-                    req.log.info({requestbody: req.body});
+                    req.log.info({requestbody: req.body}, 'ERROR: triggering request body');
                 }
                 req.log.info({err: err});
             } else if (req.method === 'POST' || req.method === 'PUT') {
-                req.log.debug({requestbody: req.body});
+                req.log.debug({requestbody: req.body}, 'POST/PUT: body');
             }
         });
 
