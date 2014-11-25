@@ -336,7 +336,7 @@ var processStandardQueryOptions = function (req, dbquery, Model) {
  * @param callback
  */
 function deepPopulate(doc, pathListString, options, callback) {
-    var listOfPathsToPopulate = pathListString.split(" ");
+    var listOfPathsToPopulate = pathListString.split(/[\s,]+/);
 
     function doNext() {
         if (listOfPathsToPopulate.length === 0) {
