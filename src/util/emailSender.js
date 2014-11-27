@@ -26,6 +26,21 @@ module.exports = function (config, templatesDir) {
             smtpTransport.close();
         },
 
+        renderEmailTemplate: function(templateName, locals, cb) {
+            emailTemplates(templatesDir, function (err, template) {
+                if (err) {
+                    return cb(err);
+                }
+                template(templateName, locals, function (err, html, text) {
+                    if (err) {
+                        return cb(err);
+                    }
+                    cb(err, html);
+                });
+            });
+
+        },
+
         sendEmail: function (from, to, subject, templateName, locals, mailExtensions) {
 
             log.debug({emailTo: to}, 'loading templates for sending: ' + templateName);
