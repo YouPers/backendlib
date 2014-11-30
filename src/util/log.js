@@ -1,14 +1,15 @@
 var bunyan = require('bunyan');
 var bsyslog = require('bunyan-syslog');
 var bLogstashTcp = require('bunyan-logstash-tcp');
+var _ = require('lodash');
 
 var getLogger = function (config) {
 
-    var logConf = config.log;
+    var logConf = _.clone(config.log);
 
     var loggerOptions = {
         name: "Main",
-        streams: logConf.streams || [],
+        streams: _.clone(logConf.streams) || [],
         serializers: bunyan.stdSerializers
     };
 
@@ -50,8 +51,7 @@ var getLogger = function (config) {
         loggerOptions.streams.push(logConf.stream);
     }
 
-    var logger = bunyan.createLogger(loggerOptions);
-    return logger;
+    return bunyan.createLogger(loggerOptions);
 };
 
 module.exports = {

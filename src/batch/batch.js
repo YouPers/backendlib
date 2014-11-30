@@ -1,6 +1,4 @@
-var log = require('../util/log').logger,
-    mongoose = require('mongoose'),
-    db = require('../database'),
+var mongoose = require('mongoose'),
     async = require('async'),
     i18n = require('../util/ypi18n').initialize(),
     _ = require('lodash'),
@@ -31,9 +29,8 @@ var log = require('../util/log').logger,
  */
 var genericBatch = function genericBatch(feeder, worker, context) {
     context = context || this;
-    db.initialize(false);
     context.batchId = shortid.generate();
-    log = context.log = log.child({batchId: context.name + ':' + context.batchId});
+    log = context.log = context.log.child({batchId: context.name + ':' + context.batchId});
 
     context.i18n = i18n;
 
@@ -43,7 +40,7 @@ var genericBatch = function genericBatch(feeder, worker, context) {
     var processFn = function (err, work) {
         if (err) {
             log.error({err: err}, "Error in Batch-Feeder, ABORTING");
-            mongoose.connection.close();
+            return mongoose.connection.close();
         } else {
             log.info("Found " + work.length + " work items. Starting parallel processing with concurrency: " + concurrency);
 
