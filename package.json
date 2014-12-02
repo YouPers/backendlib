@@ -14,7 +14,7 @@
     },
     "dependencies": {
         "restify": "2.8.x",
-        "mongoose": "3.8.x",
+        "mongoose": "3.8.19",
         "mongoose-timestamp": "~0.3.x",
         "mongoose-eventify": "0.0.x",
         "longjohn": "0.2.x",
