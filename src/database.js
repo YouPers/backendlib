@@ -3,15 +3,31 @@ var mongoose = require('mongoose'),
     swagger = require("swagger-node-restify");
 
 
-var initialize = function initialize(config, customModels, customModelPath, extension) {
+var initialize = function initialize(config, customModels, customModelPath, modelFileExtension, schemaFileExtension, schemaExtensions) {
 
-    var ext = extension || '_model';
+    var modelFileExt = modelFileExtension || '_model';
+    var schemaFileExt = schemaFileExtension || '_schema';
+
+    // create models from schema
+    function _createAndLoadModels(path, schemaNames) {
+        _.forEach(schemaNames, function (schemaName) {
+            var schema = require(path + '/' + schemaName + schemaFileExt);
+            if(schemaExtensions && schemaExtensions[schemaName]) {
+                _.merge(schema, schemaExtensions[schemaName]);
+            }
+            var modelName = schemaName.charAt(0).toUpperCase() + schemaName.slice(1);
+            var model = mongoose.model(modelName, schema);
+            if (model.getSwaggerModel) {
+                swagger.addModels(model.getSwaggerModel());
+            }
+        });
+    }
 
     // load models
     function _loadModels(modelPath, modelNames) {
         _.forEach(modelNames, function (modelName) {
-            console.log("Loading model: "+modelName + " from: " + modelPath + '/' + modelName + ext);
-            var model = require(modelPath + '/' + modelName + ext);
+            console.log("Loading model: "+modelName + " from: " + modelPath + '/' + modelName + modelFileExt);
+            var model = require(modelPath + '/' + modelName + modelFileExt);
             if (model.getSwaggerModel) {
                 swagger.addModels(model.getSwaggerModel());
             }
@@ -35,7 +51,7 @@ var initialize = function initialize(config, customModels, customModelPath, exte
         var commonPath = __dirname + '/models/';
         var commonModelNames = ['profile', 'user'];
 
-        _loadModels(commonPath, commonModelNames);
+        _createAndLoadModels(commonPath, commonModelNames);
         _loadModels(customModelPath, customModels);
     }
 

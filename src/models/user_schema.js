@@ -178,4 +178,4 @@ UserSchema.pre('remove', function (next) {
 
 UserSchema.plugin(require('mongoose-eventify'));
 
-module.exports = mongoose.model('User', UserSchema);
+module.exports = UserSchema;

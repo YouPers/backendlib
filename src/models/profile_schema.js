@@ -84,4 +84,4 @@ var ProfileSchema = common.newSchema({
 
 ProfileSchema.plugin(require('mongoose-eventify'));
 
-module.exports = mongoose.model('Profile', ProfileSchema);
+module.exports = ProfileSchema;
