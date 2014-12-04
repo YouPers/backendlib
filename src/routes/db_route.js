@@ -10,7 +10,6 @@ var rimraf = require('rimraf');
 
 
 module.exports = function (swagger, config) {
-    var log = require('../util/log').getLogger(config);
     var baseUrl = '/dbdumps';
     var baseUrlWithId = baseUrl + "/{id}";
 
@@ -79,7 +78,7 @@ module.exports = function (swagger, config) {
                 if (err) {error.handleError(err, next);}
                 res.send(files);
                 return next();
-            })
+            });
         }
     });
 
@@ -101,7 +100,7 @@ module.exports = function (swagger, config) {
             req.log.warn("removing dump: " + dumpdir);
             return rimraf(dumpdir, function(err) {
                 res.send(err);
-                return next(err)
+                return next(err);
             });
         }
     });
