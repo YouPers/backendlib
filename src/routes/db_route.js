@@ -55,7 +55,7 @@ module.exports = function (swagger, config) {
                 stdErr = stdErr + data + "/n";
             });
             mongodump.on('exit', function (code) {
-                if (code != 0) {
+                if (code !== 0) {
                     res.send(500, {code: code, stdOut: stdOut, stdErr: stdErr});
                     req.log.error({code: code, stdOut: stdOut, stdErr: stdErr}, 'error dumping the db');
                 } else {
@@ -105,7 +105,7 @@ module.exports = function (swagger, config) {
             accessLevel: "al_productadmin"
         },
         action: function (req, res, next) {
-            var dumpdir = config.dbdump.dumpdir + '/' + req.params.id
+            var dumpdir = config.dbdump.dumpdir + '/' + req.params.id;
 
             req.log.warn("removing dump: " + dumpdir);
             rimraf(dumpdir, function(err) {
