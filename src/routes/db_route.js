@@ -55,9 +55,14 @@ module.exports = function (swagger, config) {
                 stdErr = stdErr + data + "/n";
             });
             mongodump.on('exit', function (code) {
-                res.send({code: code, stdOut: stdOut, stdErr: stdErr});
-                req.log.info('mongodump exited with code ' + code);
-                return next();
+                if (code != 0) {
+                    res.send(500, {code: code, stdOut: stdOut, stdErr: stdErr});
+                    req.log.error({code: code, stdOut: stdOut, stdErr: stdErr}, 'error dumping the db');
+                } else {
+                    req.log.info({code: code, stdOut: stdOut, stdErr: stdErr}, 'db successfully dumped');
+                    res.send(200, {code: code, stdOut: stdOut, stdErr: stdErr});
+                    return next();
+                }
             });
         }
     });
@@ -74,11 +79,16 @@ module.exports = function (swagger, config) {
             accessLevel: "al_productadmin"
         },
         action: function (req, res, next) {
-            fs.readdir(config.dbdump.dumpdir, function (err, files) {
-                if (err) {error.handleError(err, next);}
-                res.send(files);
+            if (config.dbdump.restoreenabled) {
+                fs.readdir(config.dbdump.dumpdir, function (err, files) {
+                    if (err) {error.handleError(err, next);}
+                    res.send(files);
+                    return next();
+                });
+            } else {
+                res.send([]);
                 return next();
-            });
+            }
         }
     });
 
@@ -95,12 +105,16 @@ module.exports = function (swagger, config) {
             accessLevel: "al_productadmin"
         },
         action: function (req, res, next) {
-            var dumpdir = config.dbdump.dumpdir + '/' + req.params.id + '/' + config.db_database;
+            var dumpdir = config.dbdump.dumpdir + '/' + req.params.id
 
             req.log.warn("removing dump: " + dumpdir);
-            return rimraf(dumpdir, function(err) {
-                res.send(err);
-                return next(err);
+            rimraf(dumpdir, function(err) {
+                if (err) {
+                    res.send(500);
+                    return next(err);
+                }
+                res.send(200);
+                return next();
             });
         }
     });
