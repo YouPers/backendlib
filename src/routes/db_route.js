@@ -42,7 +42,7 @@ module.exports = function (swagger, config) {
             if (config.db_password && config.db_password.length > 0) {
                 args.push('-p', config.db_password);
             }
-
+            req.log.info(args, 'calling mongodump with these args');
             var mongodump = spawn(config.dbdump.mongodumpexe, args);
 
             var stdOut = "";
