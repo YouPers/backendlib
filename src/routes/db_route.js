@@ -29,7 +29,7 @@ module.exports = function (swagger, config) {
         },
         action: function (req, res, next) {
             if (!config.dbdump.dumpenabled) {
-                return next(new Error('dbdump not enabled on this instance'))
+                return next(new Error('dbdump not enabled on this instance'));
             }
 
             req.log.warn({requestinguser: req.user.fullname, dumpname: req.params.dumpname, requestheaders: req.headers}, 'dumping database: ' + config.db_database + ' to : ' + config.dbdump.dumpdir + '/' + req.params.dumpname);
@@ -57,8 +57,8 @@ module.exports = function (swagger, config) {
             });
             mongodump.on('exit', function (code) {
                 res.send({code: code, stdOut: stdOut, stdErr: stdErr});
-                return next();
                 req.log.info('mongodump exited with code ' + code);
+                return next();
             });
         }
     });
@@ -151,8 +151,8 @@ module.exports = function (swagger, config) {
             mongorestore.on('exit', function (code) {
                 var respCode = (code === 0 && stdErr.length === 0) ? 200 : 500;
                 res.send(respCode, {code: code, stdOut: stdOut, stdErr: stdErr});
-                return next();
                 req.log.info('mongorestore exited with code ' + code);
+                return next();
             });
         }
     });
