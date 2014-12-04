@@ -35,11 +35,11 @@ module.exports = function (swagger, config) {
 
             var args = ['--db', config.db_database, '--out', config.dbdump.dumpdir + '/' + req.params.dumpname];
 
-            if (config.db_user && config.db_user.length > 0) {
+            if (config.db_user && config.db_user !== 'None') {
                 args.push('-u', config.db_user);
             }
 
-            if (config.db_password && config.db_password.length > 0) {
+            if (config.db_password && config.db_password!== 'None') {
                 args.push('-p', config.db_password);
             }
             req.log.info(args, 'calling mongodump with these args');
