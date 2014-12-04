@@ -138,11 +138,11 @@ module.exports = function (swagger, config) {
 
             var args = ['--db', config.db_database, '--drop'];
 
-            if (config.db_user) {
+            if (config.db_user && config.db_user !== 'None') {
                 args.push('-u', config.db_user);
             }
 
-            if (config.db_password) {
+            if (config.db_password && config.db_password!== 'None') {
                 args.push('-p', config.db_password);
             }
 
