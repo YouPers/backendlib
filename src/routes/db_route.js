@@ -120,7 +120,7 @@ module.exports = function (swagger, config) {
         },
         action: function (req, res, next) {
             if (!config.dbdump.restoreenabled) {
-                return next(new Error('dbrestore not enabled on this instance'))
+                return next(new Error('dbrestore not enabled on this instance'));
             }
 
             var args = ['--db', config.db_database, '--drop'];
