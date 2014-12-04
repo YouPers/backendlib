@@ -107,7 +107,7 @@ module.exports = {
                 // recursivly call for all subSchemas and merge the results together
                 _.forEach(definition, function (value, key) {
                     var propertyType = Array.isArray(value) ? value[0] : value;
-                    if (propertyType instanceof mongoose.Schema) {
+                    if (propertyType instanceof mongoose.Schema && propertyType.statics.getI18nPropertySelector) {
                         _.merge(selectObj, propertyType.statics.getI18nPropertySelector(locale, basePath ? basePath + key : key));
                     }
                 });
