@@ -81,7 +81,7 @@ module.exports = function (swagger, config) {
         action: function (req, res, next) {
             if (config.dbdump.restoreenabled) {
                 fs.readdir(config.dbdump.dumpdir, function (err, files) {
-                    if (err) {error.handleError(err, next);}
+                    if (err) {return error.handleError(err, next);}
                     res.send(files);
                     return next();
                 });
