@@ -14,5 +14,6 @@ module.exports = {
     i18n: require('./util/ypi18n'),
     testHelpers: require('./test/testhelpers'),
     image: require('./util/image'),
-    emailSender: require('./util/emailSender')
+    emailSender: require('./util/emailSender'),
+    push: require('./util/push')
 };
