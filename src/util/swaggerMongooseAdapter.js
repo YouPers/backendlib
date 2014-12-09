@@ -96,6 +96,9 @@ function getSwaggerModel(aMongooseModel) {
             targetModel.properties[propertyName].items['type'] = subModelName;
         } else if (type && type.name) {
             targetModel.properties[propertyName].items.type = typeMap[type.name] || type.name || 'ObjectId';
+        } else if (_.isUndefined(type)) {
+            // this is an undefined type inside an array, mongoose means by this to use SchemaType Mixed
+            targetModel.properties[propertyName].items.type = typeMap['Mixed'];
         } else {
             throw new Error('type of arrayElement is not yet supported inside an Array: ' + propertyName);
         }
