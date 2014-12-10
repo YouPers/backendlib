@@ -6,8 +6,7 @@ var fs = require('fs');
 var error = require('../util/error');
 var spawn = require('child_process').spawn;
 var rimraf = require('rimraf');
-
-
+var async = require('async');
 
 module.exports = function (swagger, config) {
     var baseUrl = '/dbdumps';
@@ -58,10 +57,30 @@ module.exports = function (swagger, config) {
                 if (code !== 0) {
                     res.send(500, {code: code, stdOut: stdOut, stdErr: stdErr});
                     req.log.error({code: code, stdOut: stdOut, stdErr: stdErr}, 'error dumping the db');
+                    return next(new Error('error dumping the db'));
                 } else {
                     req.log.info({code: code, stdOut: stdOut, stdErr: stdErr}, 'db successfully dumped');
-                    res.send(200, {code: code, stdOut: stdOut, stdErr: stdErr});
-                    return next();
+
+                    if (config.dbdump.excludedCollections) {
+                        req.log.info(config.dbdump.excludedCollections, "excluding these collections");
+                        var excludedCollections = config.dbdump.excludedCollections.split(',');
+                        var dumpdir = config.dbdump.dumpdir + '/' + req.params.dumpname + '/' + config.db_database;
+                        async.forEach(excludedCollections, function (colName, done) {
+                            fs.unlink(dumpdir + '/' + colName + '.bson', function(err) {
+                                fs.unlink(dumpdir + '/' + colName + '.metadata.json', function(err) {
+                                    return done();
+                                });
+                            });
+                        }, function(err) {
+                            res.send(200, {code: code, stdOut: stdOut, stdErr: stdErr});
+                            return next();
+                        });
+
+                    } else {
+                        res.send(200, {code: code, stdOut: stdOut, stdErr: stdErr});
+                        return next();
+                    }
+
                 }
             });
         }
