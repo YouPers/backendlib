@@ -38,7 +38,7 @@ module.exports = {
         server.pre(function (request, response, next) {
             request.log.debug({req_id: request.getId(), req: request}, 'start processing request');
 
-            response.charSet('utf-8');
+//            response.charSet('utf-8');
             return next();
         });
 

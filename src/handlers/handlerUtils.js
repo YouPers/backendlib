@@ -17,13 +17,13 @@ function clean(Model, sentJson) {
         return (path.instance === 'ObjectID' || (path.caster && path.caster.instance === 'ObjectID'));
     })
         .forEach(function (myPath) {
-            if (myPath.path in sentJson && _.isArray(sentJson[myPath.path])) {
+            if (_.has(sentJson, myPath.path)  && _.isArray(sentJson[myPath.path])) {
                 for (var i = 0; i < sentJson[myPath.path].length; i++) {
                     if ((!(typeof sentJson[myPath.path][i] === 'string' || sentJson[myPath.path][i] instanceof String))) {
                         sentJson[myPath.path][i] = sentJson[myPath.path][i].id;
                     }
                 }
-            } else if ((myPath.path in sentJson) && (!(typeof sentJson[myPath.path] === 'string' || sentJson[myPath.path] instanceof String))) {
+            } else if (_.has(sentJson, myPath.path) && (!(typeof sentJson[myPath.path] === 'string' || sentJson[myPath.path] instanceof String))) {
                 sentJson[myPath.path] = sentJson[myPath.path].id;
             }
         });
