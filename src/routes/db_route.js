@@ -154,7 +154,7 @@ module.exports = function (swagger, config) {
             }, 'dropping and restoring database: ' + config.db_database + ' from : ' + dumpdir);
 
             // check whether we have "excluded collections" if not we drop the whole database first.
-            if (!config.dbdump.excludedCollections || config.dbdump.excludedCollections.length == 0) {
+            if (!config.dbdump.excludedCollections || config.dbdump.excludedCollections.length === 0) {
                 req.log.warn({excl: config.dbdump.excludedCollections}, 'Dropping WHOLE Db, because we do not have excluded tables');
 
                 //  mongo <dbname> --eval "db.dropDatabase()"
