@@ -76,7 +76,7 @@ module.exports = function (config, templatesDir) {
                                     if (err) {
                                         log.error({err: err, data: err.data}, "error while sending email for: " + to + " template: " + templateName);
                                     } else {
-                                        log.info({responseStatus: responseStatus, message: responseStatus.message}, "email sent: " + to + " template: " + templateName);
+                                        log.info({responseStatus: responseStatus}, "email sent: " + to + " template: " + templateName);
                                     }
                                 });
                             }

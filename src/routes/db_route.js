@@ -30,36 +30,24 @@ module.exports = function (swagger, config) {
                 return next(new Error('dbdump not enabled on this instance'));
             }
 
+
             req.log.warn({requestinguser: req.user.fullname, dumpname: req.params.dumpname, requestheaders: req.headers}, 'dumping database: ' + config.db_database + ' to : ' + config.dbdump.dumpdir + '/' + req.params.dumpname);
 
             var args = ['--db', config.db_database, '--out', config.dbdump.dumpdir + '/' + req.params.dumpname];
 
-            if (config.db_user && config.db_user !== 'None') {
-                args.push('-u', config.db_user);
-            }
-
-            if (config.db_password && config.db_password!== 'None') {
-                args.push('-p', config.db_password);
-            }
+            _addUserPwArgs(args, config);
             req.log.info(args, 'calling mongodump with these args');
             var mongodump = spawn(config.dbdump.mongodumpexe, args);
 
-            var stdOut = "";
-            var stdErr = "";
+            var output = _attachStdOutErr(mongodump);
 
-            mongodump.stdout.on('data', function (data) {
-                stdOut = stdOut + data + "/n";
-            });
-            mongodump.stderr.on('data', function (data) {
-                stdErr = stdErr + data + "/n";
-            });
             mongodump.on('exit', function (code) {
                 if (code !== 0) {
-                    res.send(500, {code: code, stdOut: stdOut, stdErr: stdErr});
-                    req.log.error({code: code, stdOut: stdOut, stdErr: stdErr}, 'error dumping the db');
+                    res.send(500, {code: code, stdOut: output.out, stdErr: output.err});
+                    req.log.error({code: code, stdOut: output.out, stdErr: output.err}, 'error dumping the db');
                     return next(new Error('error dumping the db'));
                 } else {
-                    req.log.info({code: code, stdOut: stdOut, stdErr: stdErr}, 'db successfully dumped');
+                    req.log.info({code: code, stdOut: output.out, stdErr: output.err}, 'db successfully dumped');
 
                     if (config.dbdump.excludedCollections) {
                         req.log.info(config.dbdump.excludedCollections, "excluding these collections");
@@ -72,12 +60,12 @@ module.exports = function (swagger, config) {
                                 });
                             });
                         }, function(err) {
-                            res.send(200, {code: code, stdOut: stdOut, stdErr: stdErr});
+                            res.send(200, {code: code, stdOut:  output.out, stdErr:  output.err});
                             return next();
                         });
 
                     } else {
-                        res.send(200, {code: code, stdOut: stdOut, stdErr: stdErr});
+                        res.send(200, {code: code, stdOut: output.out, stdErr: output.err});
                         return next();
                     }
 
@@ -138,6 +126,8 @@ module.exports = function (swagger, config) {
         }
     });
 
+
+
     swagger.addOperation({
         spec: {
             description: "restores a named dbdump",
@@ -155,38 +145,74 @@ module.exports = function (swagger, config) {
                 return next(new Error('dbrestore not enabled on this instance'));
             }
 
-            var args = ['--db', config.db_database, '--drop'];
-
-            if (config.db_user && config.db_user !== 'None') {
-                args.push('-u', config.db_user);
-            }
-
-            if (config.db_password && config.db_password!== 'None') {
-                args.push('-p', config.db_password);
-            }
-
             var dumpdir = config.dbdump.dumpdir + '/' + req.params.id + '/' + config.db_database;
-            args.push(dumpdir);
 
-            req.log.warn({requestinguser: req.user.fullname, dumpname: req.params.id, requestheaders: req.headers}, 'dropping and restoring database: ' + config.db_database + ' from : ' + dumpdir);
-            var mongorestore = spawn(config.dbdump.mongorestoreexe, args);
+            req.log.warn({
+                requestinguser: req.user.fullname,
+                dumpname: req.params.id,
+                requestheaders: req.headers
+            }, 'dropping and restoring database: ' + config.db_database + ' from : ' + dumpdir);
 
-            var stdOut = "";
-            var stdErr = "";
+            // check whether we have "excluded collections" if not we drop the whole database first.
+            if (!config.dbdump.excludedCollections || config.dbdump.excludedCollections.length == 0) {
+                req.log.warn({excl: config.dbdump.excludedCollections}, 'Dropping WHOLE Db, because we do not have excluded tables');
 
-            mongorestore.stdout.on('data', function (data) {
-                stdOut = stdOut + data + "/n";
-            });
-            mongorestore.stderr.on('data', function (data) {
-                stdErr = stdErr + data + "/n";
-            });
-            mongorestore.on('exit', function (code) {
-                var respCode = (code === 0 && stdErr.length === 0) ? 200 : 500;
-                res.send(respCode, {code: code, stdOut: stdOut, stdErr: stdErr});
-                req.log.info('mongorestore exited with code ' + code);
-                return next();
-            });
+                //  mongo <dbname> --eval "db.dropDatabase()"
+                var args = [config.db_database, '--eval', 'db.dropDatabase()'];
+                _addUserPwArgs(args, config);
+                var mongoDrop = spawn(config.dbdump.mongoexe, args);
+                var output = _attachStdOutErr(mongoDrop);
+                mongoDrop.on('exit', function(code) {
+                    if (code !== 0) {
+                        req.log.error(output, "error dropping db");
+                    }
+
+                    return _restoreDb();
+                });
+
+            } else {
+                return _restoreDb();
+            }
+
+            function _restoreDb() {
+                var args = ['--db', config.db_database, '--drop'];
+                _addUserPwArgs(args, config);
+                args.push(dumpdir);
+
+                var mongorestore = spawn(config.dbdump.mongorestoreexe, args);
+                var output = _attachStdOutErr(mongorestore);
+                mongorestore.on('exit', function (code) {
+                    var respCode = (code === 0 && output.err.length === 0) ? 200 : 500;
+                    res.send(respCode, {code: code, stdOut: output.out, stdErr: output.err});
+                    req.log.info('mongorestore exited with code ' + code);
+                    return next();
+                });
+            }
         }
     });
+
+    function _addUserPwArgs(args, config) {
+        if (config.db_user && config.db_user !== 'None') {
+            args.push('-u', config.db_user);
+        }
+        if (config.db_password && config.db_password !== 'None') {
+            args.push('-p', config.db_password);
+        }
+    }
+
+    function _attachStdOutErr(mongorestore, stdOut, stdErr) {
+        var output = {
+            out: "",
+            err: ""
+        };
+
+        mongorestore.stdout.on('data', function (data) {
+            output.out =  output.out + data + "/n";
+        });
+        mongorestore.stderr.on('data', function (data) {
+            output.err = output.err + data + "/n";
+        });
+        return output;
+    }
 
 };
