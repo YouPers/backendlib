@@ -13,7 +13,7 @@ var initialize = function initialize(config, customModels, customModelPath, mode
         _.forEach(schemaNames, function (schemaName) {
             var schema = require(path + '/' + schemaName + schemaFileExt);
             if(schemaExtensions && schemaExtensions[schemaName]) {
-                _.merge(schema, schemaExtensions[schemaName]);
+                schema.add(schemaExtensions[schemaName]);
             }
             var modelName = schemaName.charAt(0).toUpperCase() + schemaName.slice(1);
             var model = mongoose.model(modelName, schema);
