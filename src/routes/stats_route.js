@@ -1,6 +1,4 @@
     var handlers = require('../handlers/stats_handlers');
-    var _ = require('lodash');
-
 
 // TODO: enable authentication for stats, not everyone should be able to get stats.
 module.exports = function (swagger) {
