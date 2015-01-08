@@ -32,14 +32,16 @@ var ProfileSchema = common.newSchema({
         houseNumber: { type: String, trim: true },
         zipCode: { type: Number },
         city: { type: String, trim: true },
-        country: { type: String, enum: enums.country }
-    },
+        country: { type: String, enum: enums.country },
+        location:  {type: [Number], index: '2d'}
+},
     workAddress: {
         street: { type: String, trim: true },
         houseNumber: { type: String, trim: true },
         zipCode: { type: Number },
         city: { type: String, trim: true },
-        country: { type: String, trim: true }
+        country: { type: String, trim: true },
+        location:  {type: [Number], index: '2d'}
     },
     maritalStatus: { type: String, enum: enums.maritalStatus, default: "undefined" },
     language: { type: String, trim: true},
