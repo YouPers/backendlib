@@ -179,7 +179,7 @@ module.exports = {
         // this is only a workaround, not a clean implementation:
         // we could not find a clean way to check whether there is already the same remove hook
         // on this schema. The workaround:
-        // - check whether do not inherit from a AbstractBaseSchema --> we are a simple normal class
+        // - check whether we do not inherit from a AbstractBaseSchema --> we are a simple normal class
         // - check whether we are the concrete instantiation of the BaseSchema and not some inherited
         // object of the BaseSchame, add the method if we are the partent itself. We assume to be the parent
         // if the definition object is empty.
