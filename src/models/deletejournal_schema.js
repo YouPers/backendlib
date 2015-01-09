@@ -1,11 +1,8 @@
 /**
  * Module dependencies.
  */
-var mongoose = require('mongoose'),
-    Schema = mongoose.Schema,
-    ObjectId = Schema.ObjectId,
-    common = require('./common'),
-    error = require('../util/error');
+var common = require('./common');
+
 /**
  * deletejournal Schema
  */
