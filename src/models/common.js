@@ -2,8 +2,8 @@ var mongoose = require('mongoose'),
     Schema = mongoose.Schema,
     _ = require('lodash'),
     auth = require('../util/auth'),
-    swaggerAdapter = require('../util/swaggerMongooseAdapter');
-var timestamps = require('mongoose-timestamp');
+    swaggerAdapter = require('../util/swaggerMongooseAdapter'),
+    timestamps = require('mongoose-timestamp');
 
 module.exports = {
 
@@ -172,6 +172,36 @@ module.exports = {
         mySchema.methods.getStatsString = function () {
             return this.titleI18n || this.title;
         };
+
+        // check whether this is a inherited schema from a schema that has already had a post remove hook added
+        // to prevent adding (and then executing) the hook twice.
+
+        // this is only a workaround, not a clean implementation:
+        // we could not find a clean way to check whether there is already the same remove hook
+        // on this schema. The workaround:
+        // - check whether do not inherit from a AbstractBaseSchema --> we are a simple normal class
+        // - check whether we are the concrete instantiation of the BaseSchema and not some inherited
+        // object of the BaseSchame, add the method if we are the partent itself. We assume to be the parent
+        // if the definition object is empty.
+
+        if (!BaseSchema || _.keys(definition).length === 0) {
+            mySchema.post('remove', function(doc) {
+                var DeleteJournal = mongoose.model('Deletejournal');
+                var journal = new DeleteJournal(
+                    {
+                        model: doc.constructor.modelName,
+                        deleted: new Date(),
+                        _id: doc._id
+                    }
+                );
+                journal.save(function (err) {
+                    if (err) {
+                        throw err;
+                    }
+                });
+
+            });
+        }
 
         return mySchema;
     },

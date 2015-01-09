@@ -16,6 +16,7 @@ var initialize = function initialize(config, customModels, customModelPath, mode
                 schema.add(schemaExtensions[schemaName]);
             }
             var modelName = schemaName.charAt(0).toUpperCase() + schemaName.slice(1);
+            console.log("Loading model: "+modelName + " from: " + path + '/' + modelName);
             var model = mongoose.model(modelName, schema);
             if (model.getSwaggerModel) {
                 swagger.addModels(model.getSwaggerModel());
@@ -49,7 +50,7 @@ var initialize = function initialize(config, customModels, customModelPath, mode
 
         // load common models
         var commonPath = __dirname + '/models/';
-        var commonModelNames = ['profile', 'user'];
+        var commonModelNames = ['profile', 'user', 'deletejournal'];
 
         _createAndLoadModels(commonPath, commonModelNames);
         _loadModels(customModelPath, customModels);
