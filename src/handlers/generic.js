@@ -442,7 +442,8 @@ var sendListCb = function (req, res, next) {
                 return next();
             });
         } else if (req.params.updatesSince) {
-            var updatedClause = {updated: {$gte: req.params.updatesSince}};
+            // this is a sync request, so we include the deletes
+            var updatedClause = {deleted: {$gte: req.params.updatesSince}};
 
             // req.modelName is set in the generic.processStandardQueryOptions() method
             mongoose.model('Deletejournal')
