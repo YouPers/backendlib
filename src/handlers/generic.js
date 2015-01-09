@@ -323,6 +323,18 @@ var processStandardQueryOptions = function (req, dbquery, Model) {
         dbquery.select(Model.getI18nPropertySelector(req.locale || 'de'));
     }
 
+    if (req.params.updatesSince) {
+        // this is a synchingRequest, so we
+        // - only need updates from the timestamp they were requested
+        // - need to include the deletes
+        var updatedClause = {updated: {$gte: req.params.updatesSince}};
+        dbquery.where(updatedClause);
+
+        // set the modelName on the request so we can use it in the post processing:
+        // see generic.sendListCb()
+        req.modelName = Model.modelName;
+    }
+
     return processDbQueryOptions(req.query, dbquery, Model, req.locale);
 };
 
@@ -429,6 +441,18 @@ var sendListCb = function (req, res, next) {
                 res.send(result);
                 return next();
             });
+        } else if (req.params.updatesSince) {
+            // this is a sync request, so we include the deletes
+            var updatedClause = {deleted: {$gte: req.params.updatesSince}};
+
+            // req.modelName is set in the generic.processStandardQueryOptions() method
+            mongoose.model('Deletejournal')
+                .find({model: req.modelName})
+                .where(updatedClause)
+                .exec(function (err, deletes) {
+                    res.send(objList.concat(deletes));
+                    return next();
+                });
         } else {
             res.send(objList);
             return next();
@@ -522,7 +546,7 @@ module.exports = {
 
             // check if this is a "personal" object (i.e. has an "owner" property),
             // if yes only send the objects of the currently logged in user
-            var finder = '';
+            var finder = {};
             if (!fromAllOwners && Model.schema.paths['owner']) {
                 if (!req.user || !req.user.id) {
                     return next(new error.NotAuthorizedError('Authentication required for this object'));
