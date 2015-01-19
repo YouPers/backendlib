@@ -253,17 +253,19 @@ module.exports = function (config) {
         return function (req, res, next) {
 
             var isAdmin = auth.isAdminForModel(req.user, User);
-            var campaign = req.user.campaign && req.user.campaign._id;
-
-            // check if this is a "personal" object (i.e. has an "owner" property),
-            // if yes only send the objects of the currently logged in user
-
+            var campaign = req.user.campaign._id;
+            var isCampaignLead = campaign && _.any(req.user.campaign.campaignLeads, function (campaignLead) {
+                    return req.user._id.equals(campaignLead);
+                });
             var dbQuery = User.find();
 
             if (!isAdmin) {
                 dbQuery.limit(10);
                 if (campaign) {
                     dbQuery.where({campaign: campaign});
+                }
+                if(isCampaignLead) {
+                    dbQuery.select('+email');
                 }
             }
 
