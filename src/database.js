@@ -13,7 +13,16 @@ var initialize = function initialize(config, customModels, customModelPath, mode
         _.forEach(schemaNames, function (schemaName) {
             var schema = require(path + '/' + schemaName + schemaFileExt);
             if(schemaExtensions && schemaExtensions[schemaName]) {
-                schema.add(schemaExtensions[schemaName]);
+
+                if (schemaExtensions[schemaName].properties) {
+                    schema.add(schemaExtensions[schemaName].properties);
+                }
+
+                if (schemaExtensions[schemaName].statics) {
+                    _.forEach(schemaExtensions[schemaName].statics, function(value, key) {
+                        schema.statics[key]  = value;
+                    });
+                }
             }
             var modelName = schemaName.charAt(0).toUpperCase() + schemaName.slice(1);
             console.log("Loading model: "+modelName + " from: " + path + '/' + modelName);
