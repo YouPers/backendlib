@@ -77,7 +77,7 @@ UserSchema.methods = {
     }
 };
 
-UserSchema.statics.privatePropertiesSelector = '+email +roles +emailValidatedFlag +hashed_password +tempPasswordFlag +profile +username +campaign';
+UserSchema.statics.privatePropertiesSelector = '+email +roles +emailValidatedFlag +hashed_password +tempPasswordFlag +profile +username';
 /**
  * helper functions
  */
