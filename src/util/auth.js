@@ -181,9 +181,16 @@ function getAuthHandlers(config) {
     };
 
     function _loadUser(finder, cb) {
-        return mongoose.model('User').find(finder)
+
+        // check whether the user object has a campaign object, only populate if it is in the Schema
+        var model = mongoose.model('User');
+
+        var hasCampaignAttribute = model.schema.paths['campaign'];
+        var toPopulate = hasCampaignAttribute ? 'profile campaign' : 'profile';
+
+        return model.find(finder)
             .select(mongoose.model('User').privatePropertiesSelector)
-            .populate('profile campaign')
+            .populate(toPopulate)
             .exec(function (err, users) {
                 if (err) {
                     return cb(err);
@@ -297,7 +304,7 @@ function getAuthHandlers(config) {
             user.lastLogin = new Date();
             user.save(function(err, user) {
                 if (err) {
-                    return err;
+                    return cb(err);
                 }
                 mongoose.model('User').emit('User:firstLoginToday', user);
                 return cb(null, user);
