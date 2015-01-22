@@ -253,7 +253,7 @@ module.exports = function (config) {
         return function (req, res, next) {
 
             var isAdmin = auth.isAdminForModel(req.user, User);
-            var campaign = req.user.campaign._id;
+            var campaign = req.user.campaign && (req.user.campaign._id || req.user.campaign);
             var isCampaignLead = campaign && _.any(req.user.campaign.campaignLeads, function (campaignLead) {
                     return req.user._id.equals(campaignLead);
                 });

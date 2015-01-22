@@ -10,7 +10,8 @@ module.exports = function (config) {
             notDisplayedCorrectly: i18n.t('email:default.notDisplayedCorrectly'),
             notDisplayedCorrectlyLink: i18n.t('email:default.notDisplayedCorrectlyLink'),
             imgServer: config.webclientUrl,
-            logo: config.webclientUrl + '/assets/img/logo.png'
+            logo: config.webclientUrl + '/assets/img/logo.png',
+            urlComposer: null
         };
     };
 
@@ -37,7 +38,6 @@ module.exports = function (config) {
             text: i18n.t('email:emailVerification.text', {user: user.toJSON()}),
             link: _emailVerificationUrl(encryptedEmailAddress),
             linkText: i18n.t('email:emailVerification.linkText')
-
         };
         _.extend(locals, defaultLocals(i18n));
         emailSender.sendEmail(from, to, subject, 'genericYouPersMail', locals);
