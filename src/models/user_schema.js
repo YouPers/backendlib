@@ -132,7 +132,7 @@ UserSchema.pre('save', function (next, req, callback) {
 
     if (!this.isNew || this.profile) {
         if (this.campaign && (this.campaign !== this.profile.campaign )) {
-            Profile.update({_id: this.profile}, {campaign: this.campaign}).exec(function(err){
+            Profile.update({_id: this.profile._id || this.profile}, {campaign: this.campaign._id || this.campaign}).exec(function(err){
                 if (err) {
                     return error.handleError(err, next);
                 }
