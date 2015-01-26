@@ -172,11 +172,15 @@ function getAuthHandlers(config) {
             if (!user) {
                 return done(null, false);
             }
-            if (!user.validPassword(password)) {
-                return done(null, false);
-            }
+            return user.validPassword(password, function(err, isValid) {
+                if (isValid) {
+                    return _checkLastLogin(user, done);
+                } else {
+                    return done(null, false);
+                }
+            });
 
-            return _checkLastLogin(user, done);
+
         });
     };
 

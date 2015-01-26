@@ -7,7 +7,10 @@ var mongoose = require('mongoose'),
     crypto = require('crypto'),
     common = require('./common'),
     error = require('../util/error'),
-    Profile = mongoose.model('Profile');
+    Profile = mongoose.model('Profile'),
+    bcrypt = require('bcrypt');
+
+var    BCRYPT_PREFIX = "bcrypt:";
 /**
  * User Schema
  */
@@ -46,15 +49,25 @@ UserSchema.methods = {
      * @return {String}
      * @api public
      */
-    encryptPassword: function (password) {
+    encryptPassword: function (password, cb) {
         if (!password || !this._id) {
-            return '';
+            return cb(null,'');
         }
-        return crypto.createHmac('sha1', this._id.toString()).update(password).digest('hex'); // using the ObjectId as the salt
+//        return crypto.createHmac('sha1', this._id.toString()).update(password).digest('hex'); // using the ObjectId as the salt
+        bcrypt.hash(password, 8, function(err, hash) {
+            if (err) {
+                return cb(err);
+            }
+            return cb(null, BCRYPT_PREFIX + hash);
+        });
     },
 
-    validPassword: function (password) {
-        return crypto.createHmac('sha1', this._id.toString()).update(password).digest('hex') === this.hashed_password;
+    validPassword: function (password, cb) {
+        if (this.hashed_password.indexOf(BCRYPT_PREFIX) === 0) {
+            return bcrypt.compare(password, this.hashed_password.substring(BCRYPT_PREFIX.length), cb);
+        } else {
+            return cb(null, crypto.createHmac('sha1', this._id.toString()).update(password).digest('hex') === this.hashed_password);
+        }
     },
     toJsonConfig: {
         hide: ['hashed_password', 'tempPasswordFlag']
@@ -107,28 +120,62 @@ UserSchema
     });
 
 /**
- * Pre-save hook
+ * // Validation pre-save hook
  */
 UserSchema.pre('save', function (next, req, callback) {
     if (!validatePresenceOf(this.username)) {
-        return next(new error.MissingParameterError({ required: 'username' }));
+        return next(new error.MissingParameterError({required: 'username'}));
     }
     if (!validatePresenceOf(this.roles)) {
-        return next(new error.MissingParameterError({ required: 'roles' }));
+        return next(new error.MissingParameterError({required: 'roles'}));
     }
     if (!validatePresenceOf(this.email)) {
-        return next(new error.MissingParameterError({ required: 'email' }));
+        return next(new error.MissingParameterError({required: 'email'}));
     }
     if (this.email.indexOf('@') <= 0) {
-//    next(new error.MissingParameterError('Email address must be valid'));
+       return next(new error.MissingParameterError('Email address must be valid'));
+    }
+    return next(callback);
+
+});
+
+/**
+ *  Password handling pre-save hook
+ */
+UserSchema.pre('save', function (next, req, callback) {
+    var self = this;
+
+    function saveNewPassword() {
+        self.encryptPassword(self.password, function(err, hash) {
+            self.hashed_password = hash;
+            return next(callback);
+        });
     }
 
-
-    if(!this.hashed_password || (this.password_old && this.hashed_password === this.encryptPassword(this.password_old))) {
-        this.hashed_password = this.encryptPassword(this.password);
+    if(!self.hashed_password) {
+        // this user does not have a password yet
+        return saveNewPassword();
     } else if(this.password_old) {
-        return next(new error.InvalidArgumentError('Invalid password.'));
+        // this is a user who wants to change his password, check whether we got a correct old password
+        self.validPassword(self.password_old, function(err, result) {
+            if (result) {
+                return saveNewPassword();
+            } else {
+                return next(new error.InvalidArgumentError('Invalid password.'));
+            }
+        });
+    } else {
+        // no password operations needed
+        return next(callback);
     }
+
+});
+
+
+/**
+ * Profile handling pre-save hook
+ */
+UserSchema.pre('save', function (next, req, callback) {
 
     if (!this.isNew || this.profile) {
         if (this.campaign && (this.campaign !== this.profile.campaign )) {
