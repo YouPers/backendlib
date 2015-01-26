@@ -42,7 +42,8 @@
         "email-templates": "1.1.x",
         "ejs": "2.2.x",
         "node-gcm": "*",
-        "rimraf": "*"
+        "rimraf": "*",
+        "bcrypt": "0.8.x"
     },
     "devDependencies": {
         "grunt-contrib-jshint": "~0.10.x",
