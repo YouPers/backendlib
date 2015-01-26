@@ -1,8 +1,7 @@
 var fs = require('fs'),
     gm = require('gm'),
     AWS = require('aws-sdk'),
-    mongoose = require('mongoose'),
-    querystring = require('querystring');
+    mongoose = require('mongoose');
 
 module.exports = function (config) {
 
