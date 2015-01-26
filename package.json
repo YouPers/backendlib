@@ -1,7 +1,7 @@
 {
     "name": "ypbackendlib",
     "description": "All common components to be reused by multiple YouPers Backend Services",
-    "version": "1.4.0",
+    "version": "1.5.0",
     "private": true,
     "author": "Reto Blunschi",
     "engines": {
@@ -43,7 +43,8 @@
         "ejs": "2.2.x",
         "node-gcm": "*",
         "rimraf": "*",
-        "bcrypt": "0.8.x"
+        "bcrypt": "0.8.x",
+        "aws-sdk": "2.1.x"
     },
     "devDependencies": {
         "grunt-contrib-jshint": "~0.10.x",

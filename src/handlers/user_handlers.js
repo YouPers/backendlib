@@ -1,6 +1,5 @@
 var error = require('../util/error'),
     handlerUtils = require('./handlerUtils'),
-    image = require('../util/image'),
     auth = require('../util/auth'),
     mongoose = require('mongoose'),
     User = mongoose.model('User'),
@@ -10,6 +9,7 @@ var error = require('../util/error'),
 module.exports = function (config) {
 
     var email = require('../util/email')(config);
+    var image = require('../util/image')(config);
 
     var postFn = function (baseUrl) {
         return function (req, res, next) {
@@ -227,12 +227,16 @@ module.exports = function (config) {
     var avatarImagePostFn = function (baseUrl) {
         return function (req, res, next) {
 
-            image.resizeImage(req, req.files.file.path, 'user', function (err, image) {
+            if (!req.files || !req.files.file || !req.files.file.path || !req.files.file.name) {
+                return next(new error.MissingParameterError({ required: ['file', 'file.name']} ));
+            }
+
+            image.resizeImage(req, req.files.file, 'user', function (err, image) {
 
                 if (err) {
                     return next(err);
                 }
-
+                req.log.debug("stored image, available at url: " + image);
                 var user = req.user;
                 user.avatar = image;
                 user.save(function (err, savedUser) {
