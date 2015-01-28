@@ -9,7 +9,7 @@ module.exports = function (config, templatesDir) {
         smtpTransport = nodeMailer.createTransport(config.nodemailer),
         emailTemplates = require('email-templates'),
         fromDefault = config.email.fromString,
-        trackingEnabled = config.email.tracking.enabled;
+        trackingEnabled = config.email.tracking && config.email.tracking.enabled;
 
     return {
         encryptLinkToken: function (linkToken) {
