@@ -8,7 +8,8 @@ module.exports = function (config, templatesDir) {
         nodeMailer = require('nodemailer'),
         smtpTransport = nodeMailer.createTransport(config.nodemailer),
         emailTemplates = require('email-templates'),
-        fromDefault = config.email.fromString;
+        fromDefault = config.email.fromString,
+        trackingEnabled = config.email.tracking.enabled;
 
     return {
         encryptLinkToken: function (linkToken) {
@@ -70,6 +71,12 @@ module.exports = function (config, templatesDir) {
                                     text: text, // plaintext body
                                     html: html // html body
                                 };
+                                if (trackingEnabled) {
+                                    mail.headers = {
+                                        "X-Mailjet-TrackOpen": "1",
+                                        "X-Mailjet-TrackClick": "1"
+                                    };
+                                }
                                 if (mailExtensions) {
                                     _.extend(mail, mailExtensions);
                                 }
