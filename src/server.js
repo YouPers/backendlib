@@ -56,7 +56,7 @@ module.exports = {
         });
 
         server.on('after', function (req, res, route, err) {
-            req.log.debug({res: res}, "finished processing request");
+            req.log.debug({req: req, res: res}, "finished processing request");
             if (err && !err.doNotLog) {
                 req.log.info({req: req}, 'ERROR: triggering request');
                 if (req.body) {
