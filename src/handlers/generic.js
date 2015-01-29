@@ -467,7 +467,7 @@ var writeObjCb = function (req, res, next) {
         }
         var responseCode = 200;
         if (req.method === 'POST') {
-            res.header('location', req.url + '/' + savedObject._id);
+            res.header('Location', req.url + '/' + savedObject._id);
             responseCode = 201;
         }
         res.send(responseCode, savedObject);

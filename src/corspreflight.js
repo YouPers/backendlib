@@ -5,8 +5,8 @@ module.exports = function (server) {
         }
         res.header('Access-Control-Allow-Credentials', 'true');
         res.header('Access-Control-Allow-Headers', 'X-Requested-With, Cookie, Set-Cookie, Accept, ' +
-            'Access-Control-Allow-Credentials, Origin, Content-Type, Request-Id , X-Api-Version, X-Request-Id, Authorization, yp-language');
-        res.header('Access-Control-Expose-Headers', 'Set-Cookie, Request-Id');
+            'Access-Control-Allow-Credentials, Origin, Content-Type, Request-Id , X-Api-Version, X-Request-Id, Authorization, yp-language, Location');
+        res.header('Access-Control-Expose-Headers', 'Set-Cookie, Request-Id, Location');
         res.header('Access-Control-Max-Age', '3000');
         return next();
     });
@@ -15,8 +15,8 @@ module.exports = function (server) {
             res.header('Access-Control-Allow-Origin', req.headers.origin);
             res.header('Access-Control-Allow-Credentials', 'true');
             res.header('Access-Control-Allow-Headers', 'X-Requested-With, Cookie, Set-Cookie, Accept, ' +
-                'Access-Control-Allow-Credentials, Origin, Content-Type, Request-Id , X-Api-Version, X-Request-Id, Authorization, yp-language');
-            res.header('Access-Control-Expose-Headers', 'Set-Cookie, Language, Request-Id');
+                'Access-Control-Allow-Credentials, Origin, Content-Type, Request-Id , X-Api-Version, X-Request-Id, Authorization, yp-language, Location');
+            res.header('Access-Control-Expose-Headers', 'Set-Cookie, Language, Request-Id, Location');
             res.header('Allow', req.headers['access-control-request-method']);
             res.header('Access-Control-Allow-Methods', req.headers['access-control-request-method']);
             res.header('Access-Control-Max-Age', '3000');

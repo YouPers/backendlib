@@ -14,7 +14,8 @@ module.exports = function (config) {
         var dimensions = {
             user: [100, 100],
             campaign: [265, 167],
-            organization: [265, 167]
+            organization: [265, 167],
+            idea: [250, 168]
         };
 
         var sizeA = dimensions[type][0];
