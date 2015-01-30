@@ -10,7 +10,8 @@ var getLogger = function (config) {
     var loggerOptions = {
         name: "Main",
         streams: _.clone(logConf.streams) || [],
-        serializers: bunyan.stdSerializers
+        serializers: bunyan.stdSerializers,
+        hostname:  config.NODE_ENV
     };
 
     if (logConf.stdout) {

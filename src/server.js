@@ -53,7 +53,7 @@ module.exports = {
                 url: req.url,
                 statusCode: res.statusCode,
                 'x-real-ip': req.headers['x-real-ip'],
-                username: req.username,
+                username: req.user && req.user.email,
                 responsetime: res.getHeader('Response-Time'),
                 path: req.route.path
             }, "finished processing request");
@@ -66,7 +66,7 @@ module.exports = {
                         url: req.url,
                         statusCode: res.statusCode,
                         'x-real-ip': req.headers['x-real-ip'],
-                        username: req.username,
+                        username: req.user && req.user.email,
                         message: err.message
                     }, res.statusCode + ": " + err.name);
                 } else {
@@ -96,7 +96,6 @@ module.exports = {
         // setup middlewares to be used by server
         server.use(restify.requestLogger());
         server.use(restify.acceptParser(server.acceptable));
-        server.use(restify.authorizationParser());  // used to get username at request
         server.use(restify.queryParser());
         server.use(restify.bodyParser({ mapParams: false }));
         server.use(ypi18n.angularTranslateI18nextAdapterPre);
