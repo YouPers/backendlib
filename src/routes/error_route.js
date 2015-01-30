@@ -27,7 +27,7 @@ module.exports = function (swagger, config) {
             description: "Post errors",
             path: baseUrl,
             notes: "log errors posted by the client",
-            summary: "Post errors expierenced on a client to be logged on the server. Allows passing an Error Object in the body in JSON format.",
+            summary: "Post errors experienced on a client to be logged on the server. Allows passing an Error Object in the body in JSON format.",
             method: "POST",
             params: [swagger.bodyParam("error", "error object", "ErrorObject")],
             errorResponses: [],
