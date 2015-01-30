@@ -74,14 +74,19 @@ module.exports = {
 
         // initialize i18n
         var i18n = ypi18n.initialize();
+        var myCustomHeaders = ['X-Requested-With','Cookie', 'Set-Cookie',  'X-Api-Version', 'X-Request-Id', 'yp-language', 'location', 'authorization'];
+        _.forEach(myCustomHeaders, function(header) {
+            restify.CORS.ALLOW_HEADERS.push(header);
+        });
+
+        server.pre(restify.CORS({
+            credentials: true,                  // defaults to false
+            headers: myCustomHeaders
+        }));
 
         // setup middlewares to be used by server
         server.use(restify.requestLogger());
         server.use(restify.acceptParser(server.acceptable));
-        server.use(restify.CORS({
-            credentials: true,                  // defaults to false
-            headers: ['X-Requested-With','Cookie', 'Set-Cookie',  'X-Api-Version', 'X-Request-Id', 'yp-language', 'Location']
-        }));
         server.use(restify.queryParser());
         server.use(restify.bodyParser({ mapParams: false }));
         server.use(ypi18n.angularTranslateI18nextAdapterPre);
