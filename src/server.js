@@ -48,7 +48,16 @@ module.exports = {
         });
 
         server.on('after', function (req, res, route, err) {
-            req.log.debug({req: req, res: res}, "finished processing request");
+            req.log.info({
+                method: req.method,
+                url: req.url,
+                statusCode: res.statusCode,
+                'x-real-ip': req.headers['x-real-ip'],
+                username: req.username,
+                responsetime: res.getHeader('Response-Time'),
+                path: req.route.path
+            }, "finished processing request");
+
             if (err && !err.doNotLog) {
                 // treat some well known errors differently, no stack trace, no body
                 if (res.statusCode === 401 || res.statusCode === 403) {
@@ -59,12 +68,12 @@ module.exports = {
                         'x-real-ip': req.headers['x-real-ip'],
                         username: req.username,
                         message: err.message
-                }, res.statusCode + ": " + err.name);
+                    }, res.statusCode + ": " + err.name);
                 } else {
                     req.log.info({req: req, err: err, res: res, body: req.body}, res.statusCode + ': ' +  err.name + ': Error while handling request');
                 }
             } else if (req.method === 'POST' || req.method === 'PUT') {
-                req.log.debug({requestbody: req.body}, 'POST/PUT: body');
+                req.log.debug({body: req.body}, 'POST/PUT: body');
             }
         });
 
@@ -87,6 +96,7 @@ module.exports = {
         // setup middlewares to be used by server
         server.use(restify.requestLogger());
         server.use(restify.acceptParser(server.acceptable));
+        server.use(restify.authorizationParser());  // used to get username at request
         server.use(restify.queryParser());
         server.use(restify.bodyParser({ mapParams: false }));
         server.use(ypi18n.angularTranslateI18nextAdapterPre);
