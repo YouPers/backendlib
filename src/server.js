@@ -1,5 +1,4 @@
 var restify = require("restify"),
-    preflightEnabler = require('./corspreflight'),
     longjohn = require("longjohn"),
     fs = require("fs"),
     passport = require('passport'),
@@ -37,19 +36,12 @@ module.exports = {
 
         server.pre(function (request, response, next) {
             request.log.debug({req_id: request.getId(), req: request}, 'start processing request');
-
-//            response.charSet('utf-8');
             return next();
         });
 
 
-//        process.on('uncaughtException', function (err) {
-//            console.error('Caught uncaught process Exception: ' + err);
-//            process.exit(8);
-//        });
-
         server.on('uncaughtException', function (req, res, route, err) {
-            req.log.error(err);
+            req.log.error({err: err});
             console.error('Caught uncaught server Exception: ' + err);
             res.send(new error.InternalError(err, err.message || 'unexpected error'));
             return (true);
@@ -58,11 +50,19 @@ module.exports = {
         server.on('after', function (req, res, route, err) {
             req.log.debug({req: req, res: res}, "finished processing request");
             if (err && !err.doNotLog) {
-                req.log.info({req: req}, 'ERROR: triggering request');
-                if (req.body) {
-                    req.log.info({requestbody: req.body}, 'ERROR: triggering request body');
+                // treat some well known errors differently, no stack trace, no body
+                if (res.statusCode === 401 || res.statusCode === 403) {
+                    req.log.info({
+                        method: req.method,
+                        url: req.url,
+                        statusCode: res.statusCode,
+                        'x-real-ip': req.headers['x-real-ip'],
+                        username: req.username,
+                        message: err.message
+                }, res.statusCode + ": " + err.name);
+                } else {
+                    req.log.info({req: req, err: err, res: res, body: req.body}, res.statusCode + ': ' +  err.name + ': Error while handling request');
                 }
-                req.log.info({err: err}, 'ERROR: stack trace');
             } else if (req.method === 'POST' || req.method === 'PUT') {
                 req.log.debug({requestbody: req.body}, 'POST/PUT: body');
             }
@@ -78,10 +78,11 @@ module.exports = {
         // setup middlewares to be used by server
         server.use(restify.requestLogger());
         server.use(restify.acceptParser(server.acceptable));
-        server.use(restify.authorizationParser());
-        server.use(restify.dateParser());
+        server.use(restify.CORS({
+            credentials: true,                  // defaults to false
+            headers: ['X-Requested-With','Cookie', 'Set-Cookie',  'X-Api-Version', 'X-Request-Id', 'yp-language', 'Location']
+        }));
         server.use(restify.queryParser());
-        server.use(restify.gzipResponse());
         server.use(restify.bodyParser({ mapParams: false }));
         server.use(ypi18n.angularTranslateI18nextAdapterPre);
         server.use(i18n.handle);
@@ -96,17 +97,13 @@ module.exports = {
             return next();
         });
 
-        // allows authenticated cross domain requests
-        preflightEnabler(server);
-
         // setup swagger documentation
         swagger.setRestifyServer(server);
         swagger.setAuthorizationMiddleWare(auth.roleBasedAuth);
         swagger.configureSwaggerPaths("", "/api-docs", "");
 
         swagger.setErrorHandler(function (req, res, err) {
-            req.log.error(err);
-            console.error('Caught uncaught Exception in Swagger: ' + err + ' message: ' + err.message);
+            req.log.error({req: req, res: res, err: err, body: req.body}, "Uncaught error in Swagger ErrorHandler");
             res.send(new error.InternalError(err, err.message || 'unexpected error'));
             return (true);
         });

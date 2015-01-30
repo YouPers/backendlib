@@ -131,7 +131,7 @@ function getAuthHandlers(config) {
             throw new Error('unknown accessLevel: ' + accessLevel);
         }
         return function (req, res, next) {
-            passport.authenticate(['bearer', 'basic' ], function (err, user, info) {
+            passport.authenticate(['bearer', 'basic' ], function (err, user, callenges, statuses) {
                 if (err) {
                     return error.handleError(err, next);
                 }
