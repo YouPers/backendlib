@@ -135,7 +135,7 @@ UserSchema.pre('save', function (next, req, callback) {
     if (this.email.indexOf('@') <= 0) {
        return next(new error.MissingParameterError('Email address must be valid'));
     }
-    return next(callback);
+    return next(req, callback);
 
 });
 
@@ -148,7 +148,7 @@ UserSchema.pre('save', function (next, req, callback) {
     function saveNewPassword() {
         self.encryptPassword(self.password, function(err, hash) {
             self.hashed_password = hash;
-            return next(callback);
+            return next(req, callback);
         });
     }
 
@@ -166,7 +166,7 @@ UserSchema.pre('save', function (next, req, callback) {
         });
     } else {
         // no password operations needed
-        return next(callback);
+        return next(req, callback);
     }
 
 });
@@ -183,10 +183,10 @@ UserSchema.pre('save', function (next, req, callback) {
                 if (err) {
                     return error.handleError(err, next);
                 }
-                return next(callback);
+                return next(req, callback);
             });
         } else {
-            return next(callback);
+            return next(req, callback);
         }
     } else {
         // generate and store new profile id into new user object
@@ -203,7 +203,7 @@ UserSchema.pre('save', function (next, req, callback) {
         if (!this.avatar) {
             this.avatar = this.profile.gender === 'male' ? '/assets/img/default_avatar_man.png' : '/assets/img/default_avatar_woman.png';
         }
-        return next(callback);
+        return next(req, callback);
 
     }
 });
