@@ -183,10 +183,10 @@ UserSchema.pre('save', function (next, req, callback) {
                 if (err) {
                     return error.handleError(err, next);
                 }
-                return next(req, callback);
+                return next(callback);
             });
         } else {
-            return next(req, callback);
+            return next(callback);
         }
     } else {
         // generate and store new profile id into new user object
@@ -203,7 +203,7 @@ UserSchema.pre('save', function (next, req, callback) {
         if (!this.avatar) {
             this.avatar = this.profile.gender === 'male' ? '/assets/img/default_avatar_man.png' : '/assets/img/default_avatar_woman.png';
         }
-        return next(req, callback);
+        return next(callback);
 
     }
 });
