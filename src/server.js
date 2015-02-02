@@ -55,7 +55,7 @@ module.exports = {
                 'x-real-ip': req.headers['x-real-ip'],
                 username: req.user && req.user.email,
                 responsetime: res.getHeader('Response-Time'),
-                path: req.route.path
+                path: (req.route && req.route.path) || req.url   // for req.method == OPTIONS the req.route is not available, so we log the url
             }, "finished processing request");
 
             if (err && !err.doNotLog) {
