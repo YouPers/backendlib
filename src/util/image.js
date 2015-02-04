@@ -32,6 +32,7 @@ module.exports = function (config) {
         gm(path)
             .define('jpeg:size=' + sizeA + 'x' + sizeB) // workspace
             .thumbnail(sizeA, sizeB + '^') // shortest side sizeB
+            .autoOrient()
             .gravity('center') // center next operation
             .extent(sizeA, sizeB) // canvas size
             .noProfile() // remove meta
