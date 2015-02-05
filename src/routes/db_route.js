@@ -26,10 +26,9 @@ module.exports = function (swagger, config) {
             accessLevel: "al_productadmin"
         },
         action: function (req, res, next) {
-            if (!config.dbdump.dumpenabled) {
+            if (config.dbdump.dumpenabled !== "enabled") {
                 return next(new Error('dbdump not enabled on this instance'));
             }
-
 
             req.log.warn({requestinguser: req.user.fullname, dumpname: req.params.dumpname, requestheaders: req.headers}, 'dumping database: ' + config.db_database + ' to : ' + config.dbdump.dumpdir + '/' + req.params.dumpname);
 
@@ -86,15 +85,14 @@ module.exports = function (swagger, config) {
             accessLevel: "al_productadmin"
         },
         action: function (req, res, next) {
-            if (config.dbdump.restoreenabled) {
+            if (config.dbdump.restoreenabled === "enabled") {
                 fs.readdir(config.dbdump.dumpdir, function (err, files) {
                     if (err) {return error.handleError(err, next);}
                     res.send(files);
                     return next();
                 });
             } else {
-                res.send([]);
-                return next();
+                return next(new Error('dbrestore not enabled on this instance'));
             }
         }
     });
@@ -141,7 +139,7 @@ module.exports = function (swagger, config) {
             accessLevel: "al_productadmin"
         },
         action: function (req, res, next) {
-            if (!config.dbdump.restoreenabled) {
+            if (config.dbdump.restoreenabled !== "enabled") {
                 return next(new Error('dbrestore not enabled on this instance'));
             }
 
