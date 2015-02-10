@@ -561,7 +561,15 @@ module.exports = {
         };
     },
 
-    postFn: function genericPostFn(baseUrl, Model) {
+    /**
+     * postFn
+     * @param baseUrl
+     * @param Model
+     * @param postSaveCb(cb, user)
+     * @returns {Function}
+     */
+
+    postFn: function genericPostFn(baseUrl, Model, postSaveCb) {
         return function (req, res, next) {
 
             var err = handlerUtils.checkWritingPreCond(req.body, req.user, Model);
@@ -578,7 +586,8 @@ module.exports = {
 
             var newObj = new Model(req.body);
 
-            newObj.save(writeObjCb(req, res, next));
+            var cb = writeObjCb(req, res, next);
+            newObj.save(postSaveCb ? postSaveCb(cb, req.user) : cb);
         };
     },
 
@@ -613,6 +622,7 @@ module.exports = {
                     obj.remove();
                 });
                 res.send(200);
+                next();
             });
         };
     },
