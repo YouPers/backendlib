@@ -19,7 +19,6 @@
     "mongoose-eventify": "0.0.x",
     "longjohn": "0.2.x",
     "bunyan": "1.3.x",
-    "bunyan-syslog": "0.2.x",
     "bunyan-logstash-tcp": "*",
     "lodash": "3.2.x",
     "passport": "0.2.x",
