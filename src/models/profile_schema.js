@@ -78,7 +78,7 @@ var ProfileSchema = common.newSchema({
         email: {
             iCalInvites: { type: Boolean, default: true },
             actPlanInvites: { type: Boolean, default: true },
-            dailyUserMail: { type: Boolean, default: true }
+            dailyUserMail: { type: Boolean, default: false }
         }
     }
 
