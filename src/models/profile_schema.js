@@ -76,9 +76,9 @@ var ProfileSchema = common.newSchema({
         timezone: { type: String, trim: true },
         calendarNotification: {type: String, enum: enums.calendarNotifications, default: '900'},
         email: {
-            iCalInvites: { type: Boolean, default: true },
+            iCalInvites: { type: Boolean, default: false },
             actPlanInvites: { type: Boolean, default: true },
-            dailyUserMail: { type: Boolean, default: false }
+            dailyUserMail: { type: Boolean, default: true }
         }
     }
 
