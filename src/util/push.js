@@ -1,6 +1,6 @@
 var gcm = require('node-gcm');
 var _ = require('lodash');
-
+var error = require('./error');
 
 module.exports = function(config) {
     var TIME_TO_LIVE = config.push.timeToLive || (60*60*24*4);
@@ -13,6 +13,10 @@ module.exports = function(config) {
     }
 
     function sendPush(user, data, collapseKey, cb) {
+
+        if (!user || !user.profile) {
+            return cb(error.MissingParameterError('need user with populated profile to call push'));
+        }
         var message = new gcm.Message({
             timeToLive: TIME_TO_LIVE,
             delayWhileIdle: true,
