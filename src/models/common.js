@@ -196,7 +196,11 @@ module.exports = {
                 );
                 journal.save(function (err) {
                     if (err) {
-                        throw err;
+                        if (err.code !== 11000) {
+                            throw err;
+                        } else {
+                            console.log('duplicate deletion of: ' + doc.id);
+                        }
                     }
                 });
 
