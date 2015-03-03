@@ -584,7 +584,12 @@ module.exports = {
                 req.body.campaign = req.user.campaign.id || req.user.campaign; // handle populated and unpopulated case
             }
 
-            var newObj = new Model(req.body);
+            // split the initializing of the model from the setting of the values, so we can set the locale
+            // inbetween.
+            var newObj = new Model();
+            // setting the locale on the Document, so we can get to it in virtuals (for i18n)
+            newObj.$locale = req.locale;
+            newObj.set(req.body);
 
             var cb = writeObjCb(req, res, next);
             newObj.save(postSaveCb ? postSaveCb(cb, req.user) : cb);
@@ -747,6 +752,9 @@ module.exports = {
                         }
                     }
                 }
+
+                // setting the locale on the Document, so we can get to it in virtuals (for i18n)
+                objFromDb.$locale = req.locale;
 
                 _.extend(objFromDb, sentObj);
                 objFromDb.save(writeObjCb(req, res, next));

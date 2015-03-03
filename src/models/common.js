@@ -69,12 +69,14 @@ module.exports = {
                         return "ZZZ_MISSING TRANSLATION";
                     } else {
                         // many locales loaded, --> so we give him a reasonable default
-                        return  myValue[defaultLanguage] || myValue['en'] || myValue[_.keys(myValue)[0]];
+                        return  myValue[this.$locale || defaultLanguage] || myValue['en'] || myValue[_.keys(myValue)[0]];
                     }
                 })
                 .set(function (value) {
-                    this[key + 'I18n'] = {};
-                    this[key + 'I18n'][defaultLanguage] = value;
+                    if(!this[key + 'I18n']) {
+                        this[key + 'I18n'] = {};
+                    }
+                    this[key + 'I18n'][this.$locale || defaultLanguage] = value;
                 });
         });
 
