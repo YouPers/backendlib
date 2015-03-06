@@ -80,13 +80,18 @@ module.exports = function (config, templatesDir) {
                                     _.extend(mail, mailExtensions);
                                 }
                                 log.debug({emailTo: to}, 'trying to send email: ' + templateName);
-                                smtpTransport.sendMail(mail, function (err, responseStatus) {
-                                    if (err) {
-                                        log.error({err: err, data: err.data}, "error while sending email for: " + to + " template: " + templateName);
-                                    } else {
-                                        log.info({responseStatus: responseStatus}, "email sent: " + to + " template: " + templateName);
-                                    }
-                                });
+
+                                if (config.email.enabled !== "disabled") {
+                                    smtpTransport.sendMail(mail, function (err, responseStatus) {
+                                        if (err) {
+                                            log.error({err: err, data: err.data}, "error while sending email for: " + to + " template: " + templateName);
+                                        } else {
+                                            log.info({responseStatus: responseStatus}, "email sent: " + to + " template: " + templateName);
+                                        }
+                                    });
+                                } else {
+                                    log.info({mail: mail}, "email sending disabled in config: this email was NOT sent");
+                                }
                             }
 
                         }

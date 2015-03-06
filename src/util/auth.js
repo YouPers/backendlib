@@ -133,7 +133,8 @@ function getAuthHandlers(config) {
         return function (req, res, next) {
             passport.authenticate(['bearer', 'basic' ], function (err, user, callenges, statuses) {
                 if (err) {
-                    return error.handleError(err, next);
+                    req.log.error({err: err}, 'error when trying to authenticate');
+                    return next(new error.InvalidArgumentError(err));
                 }
                 checkAccess(user, accessLevel, function (err) {
                     if (err) {
@@ -152,7 +153,7 @@ function getAuthHandlers(config) {
 
     /**
      * checkes whether the supplied credentials are belonging to a valid user in the local database.
-     * The parameter username may also be used with the user's email address.
+     * The parameter username may also be used with the user's email address.cd
      * Calls done(error, user) at the end.
      *
      * @param username the user's username or email address
