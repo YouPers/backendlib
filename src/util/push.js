@@ -39,6 +39,7 @@ module.exports = function(config) {
                     return cb(err);
                 }
                 log.trace({result: result},"push message sent");
+                return cb(null, result);
             });
         } else {
             return cb(null, {result: "no android devices found for this user"});
