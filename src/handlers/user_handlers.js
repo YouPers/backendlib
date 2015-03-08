@@ -119,6 +119,14 @@ module.exports = function (config) {
             });
     };
 
+    var sendVerificationEmailPostFn = function (baseUrl) {
+        return function (req, res, next) {
+            email.sendEmailVerification(req.user, req.i18n);
+            res.send(200);
+            return next();
+        };
+    };
+
     var emailVerificationPostFn = function (baseUrl) {
         return function (req, res, next) {
 
@@ -281,6 +289,7 @@ module.exports = function (config) {
     return {
         postFn: postFn,
         validateUserPostFn: validateUserPostFn,
+        sendVerificationEmailPostFn: sendVerificationEmailPostFn,
         emailVerificationPostFn: emailVerificationPostFn,
         requestPasswordResetPostFn: requestPasswordResetPostFn,
         passwordResetPostFn: passwordResetPostFn,
