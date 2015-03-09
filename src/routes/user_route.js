@@ -73,6 +73,21 @@ module.exports = function (swagger, config) {
         },
         action: userHandlers.emailVerificationPostFn(baseUrl)
     });
+    swagger.addOperation({
+        spec: {
+            description: "send verification email",
+            path: baseUrlWithId + "/send_verification_email",
+            notes: "send verification email",
+            summary: "send verification email",
+            mobileSDK: "disabled",
+            method: "POST",
+            params: [],
+            "errorResponses": [],
+            "nickname": "sendVerificationEmail",
+            accessLevel: 'al_user'
+        },
+        action: userHandlers.sendVerificationEmailPostFn(baseUrl)
+    });
 
     swagger.addOperation({
         spec: {

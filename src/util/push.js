@@ -26,11 +26,11 @@ module.exports = function(config) {
             data: data
         });
 
-        var androidRegistrationIds =
+        var androidRegistrationIds = user.profile && user.profile.devices ?
             _.chain(user.profile.devices)
                 .filter(function(dev) {return dev.deviceType === 'android';})
                 .pluck('token')
-                .value();
+                .value() : undefined;
 
         if (androidRegistrationIds && androidRegistrationIds.length > 0) {
             log.trace({data: data, user: user.username || user.email || user.id},"sending push message");
