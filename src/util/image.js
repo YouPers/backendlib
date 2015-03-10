@@ -15,7 +15,8 @@ module.exports = function (config) {
             user: [100, 100],
             campaign: [265, 167],
             organization: [265, 167],
-            idea: [250, 168]
+            idea: [250, 168],
+            marketPartnerLogo: [265, 167]
         };
 
         var sizeA = dimensions[type][0];
