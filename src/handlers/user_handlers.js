@@ -221,6 +221,8 @@ module.exports = function (config) {
 
                     user.hashed_password = undefined;
                     user.password = req.body.password;
+                    user.tempPasswordFlag = false;
+                    user.emailValidatedFlag = true;
                     user.save(function (err, saveduser) {
 
                         res.send(200, {});
