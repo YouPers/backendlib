@@ -16,7 +16,7 @@ module.exports = function (config) {
             campaign: [265, 167],
             organization: [265, 167],
             idea: [250, 168],
-            marketPartnerLogo: [265, 167]
+            marketPartnerLogo: [250, 100]
         };
 
         var sizeA = dimensions[type][0];
@@ -42,8 +42,6 @@ module.exports = function (config) {
                     return callback(err);
                 }
                 req.log.debug('avatar: resize complete\n' + pathResized);
-
-                // read resized image from fs and store in db
 
                 req.log.trace("file resized");
                 storeFile(pathResized, name, req, function(err, url) {
