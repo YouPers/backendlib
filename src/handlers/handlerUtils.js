@@ -20,11 +20,20 @@ function clean(Model, sentJson) {
             if (_.has(sentJson, myPath.path)  && _.isArray(sentJson[myPath.path])) {
                 for (var i = 0; i < sentJson[myPath.path].length; i++) {
                     if ((!(typeof sentJson[myPath.path][i] === 'string' || sentJson[myPath.path][i] instanceof String))) {
-                        sentJson[myPath.path][i] = sentJson[myPath.path][i].id;
+                        if(_.isNull(sentJson[myPath.path][i])) {
+                            sentJson[myPath.path].splice(i,i);
+                        } else {
+                            sentJson[myPath.path][i] = sentJson[myPath.path][i].id;
+                        }
                     }
                 }
             } else if (_.has(sentJson, myPath.path) && (!(typeof sentJson[myPath.path] === 'string' || sentJson[myPath.path] instanceof String))) {
-                sentJson[myPath.path] = sentJson[myPath.path].id;
+
+                if (_.isNull(sentJson[myPath.path])) {
+                    delete sentJson[myPath.path];
+                } else {
+                    sentJson[myPath.path] = sentJson[myPath.path].id;
+                }
             }
         });
 }
