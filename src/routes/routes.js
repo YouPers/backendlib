@@ -10,7 +10,7 @@ function addGenericRoutes(swagger, model, baseUrl, options) {
         POST: true,
         DELETE: true,
         DELETEall: true,
-        modelName: model.constructor.modelName,
+        modelName: model.modelName,
         accessLevel: 'al_user'
     });
 
@@ -24,7 +24,7 @@ function addGenericRoutes(swagger, model, baseUrl, options) {
 
     var template = {
         spec: {
-            description: 'Operations about ' + options.modelName,
+            description: 'Operations about ' + options.modelName + 's',
             accessLevel: options.accessLevel
         },
         action: undefined
