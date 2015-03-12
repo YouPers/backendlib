@@ -9,6 +9,7 @@ module.exports = {
     auth: require('./util/auth'),
     handlers: require('./handlers/generic'),
     handlerUtils: require('./handlers/handlerUtils'),
+    routes: require('./routes/routes'),
     stats: require('./handlers/stats_handlers'),
     commmonModels: require('./models/common'),
     mongoose: require('mongoose'),
