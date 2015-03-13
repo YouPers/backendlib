@@ -1,7 +1,8 @@
 var fs = require('fs'),
     gm = require('gm'),
     AWS = require('aws-sdk'),
-    mongoose = require('mongoose');
+    mongoose = require('mongoose'),
+    moment = require('moment');
 
 module.exports = function (config) {
 
@@ -74,7 +75,7 @@ module.exports = function (config) {
         var body = fs.createReadStream(filePath);
         var key = mongoose.Types.ObjectId().toString() + _getExtension(filename);
 
-        var params = {Key: key, Body: body};
+        var params = {Key: key, Body: body, Expires: moment().add(1, 'year').toDate(), 'CacheControl': 'max-age=31536000'};
         s3Bucket.upload(params, function(err, result) {
             req.log.trace("in  store cb, err: " + err);
             if (err) {
