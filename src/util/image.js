@@ -32,11 +32,8 @@ module.exports = function (config) {
 
         // resize on fs using GraphicMagick
         gm(path)
-            .define('jpeg:size=' + sizeA + 'x' + sizeB) // workspace
-            .thumbnail(sizeA, sizeB + '^') // shortest side sizeB
+            .thumbnail(sizeA, sizeB + '^')
             .autoOrient()
-            .gravity('center') // center next operation
-            .extent(sizeA, sizeB) // canvas size
             .noProfile() // remove meta
             .write(pathResized, function (err) {
                 if (err) {
