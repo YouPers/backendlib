@@ -483,7 +483,7 @@ module.exports = {
     addStandardQueryOptions: processStandardQueryOptions,
     processDbQueryOptions: processDbQueryOptions,
 
-    getByIdFn: function (baseUrl, Model) {
+    getByIdFn: function (baseUrl, Model, allowNonOwner) {
         return function (req, res, next) {
             var objId;
             try {
@@ -521,7 +521,7 @@ module.exports = {
                         });
                     }
 
-                    if (isOwnedObj && !isOwner && !isJoiner) {
+                    if (isOwnedObj && !isOwner && !isJoiner && !allowNonOwner) {
                         return next(new error.NotAuthorizedError('Authenticated User does not own this object'));
                     }
 
