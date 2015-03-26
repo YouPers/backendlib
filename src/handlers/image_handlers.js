@@ -1,4 +1,5 @@
 var error = require('../util/error');
+var _ = require('lodash');
 
 module.exports = function (config) {
 
@@ -17,7 +18,17 @@ module.exports = function (config) {
                 return next(new error.MissingParameterError({ required: ['type']} ));
             }
 
-            image.resizeImage(req, req.files.file, req.params.type, function (err, image) {
+            if (req.params.type === 'custom' ) {
+                if (!req.params.sizeX || !req.params.sizeY) {
+                    return next(new error.MissingParameterError('"sizeX" and "sizeY" are required for type "custom"', {type: req.params.type, sizeX: req.params.sizeX, sizeY: req.params.sizeY } ));
+                }
+
+                if (!_.isFinite(parseFloat(req.params.sizeX)) || !_.isFinite(parseFloat(req.params.sizeY)) ) {
+                    return next(new error.InvalidArgumentError('"sizeX" and "sizeY" must be Numbers', {type: req.params.type, sizeX: req.params.sizeX, sizeY: req.params.sizeY } ));
+                }
+            }
+
+            image.resizeImage(req, req.files.file, req.params.type, [req.params.sizeX, req.params.sizeY], function (err, image) {
 
                 if (err) {
                     return next(err);

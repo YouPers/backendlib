@@ -2,6 +2,7 @@ var fs = require('fs'),
     gm = require('gm'),
     AWS = require('aws-sdk'),
     mongoose = require('mongoose'),
+    error = require('../util/error'),
     moment = require('moment');
 
 module.exports = function (config) {
@@ -9,7 +10,7 @@ module.exports = function (config) {
     AWS.config.region = config.AWS.defaultRegion;
     AWS.config.update({accessKeyId: config.AWS.accessKeyId, secretAccessKey: config.AWS.secretAccessKey});
 
-    var resizeImage = function (req, fileObject, type, callback) {
+    var resizeImage = function (req, fileObject, type, size, callback) {
 
 
         var dimensions = {
@@ -20,8 +21,20 @@ module.exports = function (config) {
             marketPartnerLogo: [250, 100]
         };
 
-        var sizeA = dimensions[type][0];
-        var sizeB = dimensions[type][1];
+        var imgSize = [200, 200];
+
+        if (type === 'custom') {
+            imgSize = size;
+        } else {
+            imgSize = dimensions[type];
+        }
+
+        if (!imgSize || imgSize.length !== 2) {
+            return callback(new error.InvalidArgumentError('type and size not valid', {type: type, size: size}));
+        }
+
+        var sizeA = imgSize[0];
+        var sizeB = imgSize[1];
 
         var path = fileObject.path;
         var name = fileObject.name;
