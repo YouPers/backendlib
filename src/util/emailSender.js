@@ -90,7 +90,8 @@ module.exports = function (config, templatesDir) {
                                         }
                                     });
                                 } else {
-                                    log.info({mail: mail}, "email sending disabled in config: this email was NOT sent");
+                                    log.info({from: mail.from, to: mail.to, subject: mail.subject, text: mail.text}, "email sending disabled in config: this email was NOT sen (HTML only shown on debug log level");
+                                    log.debug({from: mail.from, to: mail.to, subject: mail.subject, html: mail.html}, "html email content");
                                 }
                             }
 
