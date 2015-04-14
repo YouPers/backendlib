@@ -40,11 +40,11 @@ function constructQuery(queryDef, options) {
 
         var timeOperator = {
             $match: {}
-        }
+        };
         timeOperator['$match'][timeRangeAttr] = {
             $gt: moment().startOf(options.timeRange).toDate(),
             $lt: moment().endOf(options.timeRange).toDate()
-        }
+        };
         pipe.append(timeOperator);
     }
 
