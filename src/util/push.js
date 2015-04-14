@@ -16,8 +16,8 @@ module.exports = function(config) {
 
     function sendPush(user, data, collapseKey, cb) {
 
-        if (!user || !user.profile) {
-            return cb(error.MissingParameterError('need user with populated profile to call push'));
+        if (!user || !user.profile || !user.profile._id) {
+            return cb(new error.MissingParameterError('need user with populated profile to call push'));
         }
         var message = new gcm.Message({
             timeToLive: TIME_TO_LIVE,
