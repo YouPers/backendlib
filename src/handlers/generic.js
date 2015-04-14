@@ -266,8 +266,8 @@ var _addFilter = function (queryParams, dbquery, Model) {
         });
     }
 
-    _.each(flatten(queryParams.filter), function (v, k) {
-        var ret = /^([+,-])?(.*)/.exec(k);
+    _.each(flatten(queryParams.filter), function (queryValue, queryProperty  ) {
+        var ret = /^([+,-])?(.*)/.exec(queryProperty);
 
         // translate the 'id' we use clientSide into the '_id' we use serverSide
         if (ret[2] === 'id') {
@@ -289,16 +289,16 @@ var _addFilter = function (queryParams, dbquery, Model) {
 
         if (type === ObjectId) {
             var qp = {};
-            var multipleValues = v.split(',');
+            var multipleValues = queryValue.split(',');
             if (multipleValues.length>1) {
                 qp[ret[2]] = {$in: _.map(multipleValues, mongoose.Types.ObjectId)};
             } else {
-                qp[ret[2]] = v;
+                qp[ret[2]] = queryValue;
             }
             dbquery = dbquery[method](qp);
         } else {
 
-            dbquery = dbquery[method](ret[2], addOp(v, String === type || 'String' === type, type));
+            dbquery = dbquery[method](ret[2], addOp(queryValue, String === type || 'String' === type, type));
         }
         // console.log(' v',v,' k',k,' ',obj);
 
@@ -771,6 +771,7 @@ module.exports = {
         filter: {
             "name": "filter",
             "description": 'filters the results by adding a where clause, to see  the supported language and format see ',
+            "notes": "use the following format: filter[property]=value. You can prepend property with +,- to change the query: + leads to an AND condition, - leads to a OR condition, no prefix leads to a WHERE condition. You may prefix the value with <, <<, >, >>, ! to change how to query for the value: < is 'lower or equal', << is strictly lower, > is 'larger or equal, >> is strictly larger, ! is NOT equal ($not for strings, $ne for any other type), default is 'equals' (interpreted as mongo-regular expression ($regex) for type String, $eq for all other types). Example: filter[+created]==>>2015-04-14T08:55:25.202Z",
             "dataType": 'string',
             "required": false,
             "allowMultiple": true,
