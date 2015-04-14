@@ -17,35 +17,37 @@ function constructQuery(queryDef, options) {
     options.queryModelName = queryDef.modelName;
     var pipe = mongoose.model(queryDef.modelName).aggregate();
 
-    if ((options.scopeType === 'owner') || (options.scopeType === 'campaign') || options.scopeType === 'topic') {
-        // scope can be 'owner', 'campaign', 'all'
+    if (options.scopeType === 'all') {
+        // do nothing, consider all rows
+    } else if (options.scopeType) {
+
+        // TODO: check if the scopeType is a valid Path for this model and throw if not
         if (!options.scopeId) {
-            throw new error.MissingParameterError("Illegal Arguments, when ScopeType == campaign or owner, an id has to be passed");
+            throw new error.MissingParameterError("Illegal Arguments, when ScopeType is set, scopeId has to be passed as well");
         }
         var scopePipelineEntry = {$match: {}};
         scopePipelineEntry.$match[options.scopeType] = new ObjectId(options.scopeId);
+
         if (!queryDef.ignoreScope) {
             pipe.append(scopePipelineEntry);
         }
-    } else if (options.scopeType === 'all') {
-        // do nothing, consider all rows
-    } else if (options.scopeType) {
-        // defined but unknown
-        throw new error.InvalidArgumentError('Unknown ScopeType: ' + options.scopeType);
     } else {
         // we assume 'all' if nothing is passed
     }
 
     if (options.timeRange && (options.timeRange !== 'all')) {
-        pipe.append({
-            $match: {
-                'start': {
-                    $gt: moment().startOf(options.timeRange).toDate(),
-                    $lt: moment().endOf(options.timeRange).toDate()
-                }
-            }
-        });
+        var timeRangeAttr = queryDef.timeRangeAttr || 'start';
+
+        var timeOperator = {
+            $match: {}
+        }
+        timeOperator['$match'][timeRangeAttr] = {
+            $gt: moment().startOf(options.timeRange).toDate(),
+            $lt: moment().endOf(options.timeRange).toDate()
+        }
+        pipe.append(timeOperator);
     }
+
     var stages = queryDef.stages;
 
     // stages can be an array of Aggregation Pipeline Operators,
@@ -54,14 +56,14 @@ function constructQuery(queryDef, options) {
         stages = stages(options);
     }
 
-        // despite the documentation, aggregate.append() does not like arrays.. so we do it piece per piece
-        _.forEach(stages, function (stage) {
-            try {
-                pipe.append(stage);
-            } catch (err) {
-                throw new Error('Error adding stage: ' + stage + ' from query: ' + queryDef);
-            }
-        });
+    // despite the documentation, aggregate.append() does not like arrays.. so we do it piece per piece
+    _.forEach(stages, function (stage) {
+        try {
+            pipe.append(stage);
+        } catch (err) {
+            throw new Error('Error adding stage: ' + stage + ' from query: ' + queryDef);
+        }
+    });
 
     return pipe;
 }
@@ -75,7 +77,7 @@ var getStats = function () {
 
         var type = req.params.type;
         if (!type) {
-            return next(new error.MissingParameterError({ required: 'type' }));
+            return next(new error.MissingParameterError({required: 'type'}));
         }
 
         var queryDefs = {};
@@ -84,7 +86,7 @@ var getStats = function () {
                 queryDefs = statsQueries;
             } else {
                 queryDefs[type] = statsQueries[type];
-                if (!queryDefs[type])  {
+                if (!queryDefs[type]) {
                     return next(new error.InvalidArgumentError('Unknown Query Type: ' + type));
                 }
             }
@@ -101,7 +103,7 @@ var getStats = function () {
         async.each(_.keys(queryDefs), function (queryName, done) {
 
             var myWaterFall = [
-                function(cb) {
+                function (cb) {
 
                     try {
                         var q = constructQuery(queryDefs[queryName], options);
