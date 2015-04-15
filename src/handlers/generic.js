@@ -816,6 +816,15 @@ module.exports = {
             "default": 100,
             "allowMultiple": false,
             "paramType": "query"
+        },
+        skip: {
+            "name": "skip",
+            "description": 'skip the first n results of a query, use together with "limit" for server side pageination',
+            "dataType": 'integer',
+            "required": false,
+            "default": 0,
+            "allowMultiple": false,
+            "paramType": "query"
         }
     }
 };

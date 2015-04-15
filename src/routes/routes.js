@@ -17,9 +17,11 @@ function addGenericRoutes(swagger, model, baseUrl, options) {
     var defaultGetParams = [
         generic.params.sort,
         generic.params.limit,
+        generic.params.skip,
         generic.params.filter,
         generic.params.populate,
-        generic.params.populatedeep];
+        generic.params.populatedeep
+    ];
 
 
     var template = {
