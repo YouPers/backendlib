@@ -6,10 +6,10 @@ module.exports = function (swagger, config) {
 
     swagger.addOperation({
         spec: {
-            description: "uploads a picture to our servers and returns a URL to access the picture later. Will resize the picture to fit the specified type",
+            description: "Image upload oprations",
             path: baseUrl,
             summary: "uploads a picture and returns a URL",
-            notes: "use HTTP multipart form upload to post an image and then get a publicly accessible URL for the image. Use this to upload an avatar picture, store then the URL you get from this call on the object, e.g. object.picture or object.avatar",
+            notes: "Will resize the picture to fit the specified type. Use HTTP multipart form upload to post an image and then get a publicly accessible URL for the image. Use this to upload an avatar picture, store then the URL you get from this call on the object, e.g. object.picture or object.avatar",
             method: "POST",
             params: [
                 swagger.bodyParam("file", "file to be uploaded", "{}"),
