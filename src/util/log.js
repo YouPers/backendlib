@@ -26,7 +26,10 @@ var getLogger = function (config) {
                 type: "raw",
                 stream: bLogstashTcp.createStream({
                     host: logConf.logstash.host || 'localhost',
-                    port: logConf.logstash.port || 5001
+                    port: logConf.logstash.port || 5001,
+                    max_connect_retries: -1,
+                    retry_interval: 2000,
+                    cbuffer_size: 100
                 })
             };
         loggerOptions.streams.push(myLogstashStream);
