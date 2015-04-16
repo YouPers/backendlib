@@ -722,7 +722,7 @@ module.exports = {
 
 
                 if (Model.modelName === 'User' && req.user && req.user.id !== objFromDb.id) {
-                    if(!auth.checkAccess(req.user, 'al_systemadmin')) {
+                    if(!auth.checkAccess(req.user, 'al_productadmin')) {
                         return next(new error.NotAuthorizedError('Not authorized to change this user'));
                     } else if(sentObj.password) {
                         objFromDb.hashed_password = undefined;
