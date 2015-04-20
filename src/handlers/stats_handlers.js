@@ -15,18 +15,28 @@ function registerQueries(queryDefs) {
 function constructQuery(queryDef, options) {
     // put the modelName into options, so the transformers can access it
     options.queryModelName = queryDef.modelName;
-    var pipe = mongoose.model(queryDef.modelName).aggregate();
+    var model = mongoose.model(queryDef.modelName);
+    var pipe = model.aggregate();
 
     if (options.scopeType === 'all') {
         // do nothing, consider all rows
     } else if (options.scopeType) {
 
-        // TODO: check if the scopeType is a valid Path for this model and throw if not
-        if (!options.scopeId) {
+        var path = model.schema.paths[options.scopeType];
+
+        if (!path ) {
+            throw new error.InvalidArgumentError("Illegal Arguments, when ScopeType not valid for this query");
+        }
+        if (!options.scopeId ) {
             throw new error.MissingParameterError("Illegal Arguments, when ScopeType is set, scopeId has to be passed as well");
         }
         var scopePipelineEntry = {$match: {}};
-        scopePipelineEntry.$match[options.scopeType] = new ObjectId(options.scopeId);
+
+        if (path.instance === 'String') {
+            scopePipelineEntry.$match[options.scopeType] = options.scopeId;
+        } else {
+            scopePipelineEntry.$match[options.scopeType] = new ObjectId(options.scopeId);
+        }
 
         if (!queryDef.ignoreScope) {
             pipe.append(scopePipelineEntry);
@@ -61,7 +71,7 @@ function constructQuery(queryDef, options) {
         try {
             pipe.append(stage);
         } catch (err) {
-            throw new Error('Error adding stage: ' + stage + ' from query: ' + queryDef);
+            throw new Error('Error adding stage: ' + JSON.stringify(stage) + ' from query: ' + JSON.stringify(queryDef));
         }
     });
 
