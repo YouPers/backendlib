@@ -70,11 +70,13 @@ module.exports = {
                         message: err.message
                     }, res.statusCode + ": " + err.name);
                 } else {
-                    req.log.info({req: req, err: err, res: res, body: req.body}, res.statusCode + ': ' +  err.name + ': Error while handling request');
+                    req.log.info({req: req, err: err, res: res, reqbody: req.body, resbody: res.body}, res.statusCode + ': ' +  err.name + ': Error while handling request');
                 }
             } else if (req.method === 'POST' || req.method === 'PUT') {
                 req.log.debug({body: req.body}, 'POST/PUT: body');
             }
+
+            req.log.debug({res: res}, 'response sent');
         });
 
         // setup better error stacktraces
