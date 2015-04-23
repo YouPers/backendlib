@@ -161,7 +161,7 @@ Object.keys(CODES).forEach(function (k) {
         // send error message in client response
         opts.body.message = opts.message;
         opts.body.code = opts.restCode;
-        if (cause.message) {
+        if (cause && cause.message) {
             opts.body.cause = cause.message;
         }
 
