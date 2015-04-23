@@ -299,7 +299,7 @@ var _addFilter = function (queryParams, dbquery, Model) {
                 if (!mongoose.Types.ObjectId.isValid(queryValue)) {
                     throw new error.InvalidArgumentError('the value "' +queryValue + '" is not a valid ObjectId. Use a valid ObjectId to filter for this porperty');
                 }
-                qp[ret[2]] = new ObjectId(queryValue);
+                qp[ret[2]] = queryValue;
             }
             dbquery = dbquery[method](qp);
         } else {
