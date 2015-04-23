@@ -756,7 +756,7 @@ module.exports = {
                 // setting the locale on the Document, so we can get to it in virtuals (for i18n)
                 objFromDb.$locale = req.locale;
 
-                _.extend(objFromDb, sentObj);
+                objFromDb.set(sentObj);
                 objFromDb.save(writeObjCb(req, res, next));
             });
 
