@@ -44,6 +44,12 @@ module.exports = function (config, templatesDir) {
         sendEmail: function (from, to, subject, templateName, locals, mailExtensions) {
 
             log.debug({emailTo: to}, 'loading templates for sending: ' + templateName);
+
+            // add an instance
+            if (config.email.subjectSuffix) {
+                subject = subject + config.email.subjectSuffix;
+            }
+
             emailTemplates(templatesDir, function (err, template) {
                 if (err) {
                     log.error({err: err}, 'error during parsing of all email-templates');
