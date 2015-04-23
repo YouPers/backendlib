@@ -185,6 +185,14 @@ function addOp(str, isString, type) {
             op = '$gte';
             val = str.substring(1);
         }
+    } else if (str[0] === '*') {
+        if (str[1] === '!') {
+            op = '$exists';
+            val = false;
+        } else {
+            op = '$exists';
+            val = true;
+        }
     } else if (str[0] === '!') {
         if (isString) {
             op = '$not';
