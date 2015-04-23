@@ -294,7 +294,12 @@ var _addFilter = function (queryParams, dbquery, Model) {
             var multipleValues = queryValue.split(',');
 
             if (multipleValues.length > 1) {
-                qp[ret[2]] = {$in: _.map(multipleValues, mongoose.Types.ObjectId)};
+                qp[ret[2]] = {$in: _.map(multipleValues, function(val) {
+                    if (!mongoose.Types.ObjectId.isValid(val)) {
+                        throw new error.InvalidArgumentError('the value "' +val + '" is not a valid ObjectId. Use a valid ObjectId to filter for this porperty');
+                    }
+                    return mongoose.Types.ObjectId(val);
+                })};
             } else {
                 if (!mongoose.Types.ObjectId.isValid(queryValue)) {
                     throw new error.InvalidArgumentError('the value "' +queryValue + '" is not a valid ObjectId. Use a valid ObjectId to filter for this porperty');
