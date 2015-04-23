@@ -152,7 +152,6 @@ function _populate(schema, dbquery, paths, locale) {
             }
 
 
-
             //}
         } else {
             dbquery.populate(p);
@@ -197,6 +196,9 @@ function addOp(str, isString, type) {
         }
     } else if (type === ObjectId) {
         op = '$eq';
+        if (!mongoose.Types.ObjectId.isValid(str)) {
+            throw new error.InvalidArgumentError('the value "' +str + '" is not a valid ObjectId. Use a valid ObjectId to filter for this porperty');
+        }
         val = new ObjectId(str);
     } else if (isString) {
         op = '$regex';
@@ -266,7 +268,7 @@ var _addFilter = function (queryParams, dbquery, Model) {
         });
     }
 
-    _.each(flatten(queryParams.filter), function (queryValue, queryProperty  ) {
+    _.each(flatten(queryParams.filter), function (queryValue, queryProperty) {
         var ret = /^([+,-])?(.*)/.exec(queryProperty);
 
         // translate the 'id' we use clientSide into the '_id' we use serverSide
@@ -290,10 +292,14 @@ var _addFilter = function (queryParams, dbquery, Model) {
         if (type === ObjectId) {
             var qp = {};
             var multipleValues = queryValue.split(',');
-            if (multipleValues.length>1) {
+
+            if (multipleValues.length > 1) {
                 qp[ret[2]] = {$in: _.map(multipleValues, mongoose.Types.ObjectId)};
             } else {
-                qp[ret[2]] = queryValue;
+                if (!mongoose.Types.ObjectId.isValid(queryValue)) {
+                    throw new error.InvalidArgumentError('the value "' +queryValue + '" is not a valid ObjectId. Use a valid ObjectId to filter for this porperty');
+                }
+                qp[ret[2]] = new ObjectId(queryValue);
             }
             dbquery = dbquery[method](qp);
         } else {
@@ -502,7 +508,7 @@ module.exports = {
                     if (!obj) {
                         return next(new error.ResourceNotFoundError());
                     }
-                    var isOwnedObj =  Model.schema.paths['owner'];
+                    var isOwnedObj = Model.schema.paths['owner'];
 
                     var isOwner = false;
                     //check if the object has an owner and whether the current user owns the object
@@ -722,9 +728,9 @@ module.exports = {
 
 
                 if (Model.modelName === 'User' && req.user && req.user.id !== objFromDb.id) {
-                    if(!auth.checkAccess(req.user, 'al_productadmin')) {
+                    if (!auth.checkAccess(req.user, 'al_productadmin')) {
                         return next(new error.NotAuthorizedError('Not authorized to change this user'));
-                    } else if(sentObj.password) {
+                    } else if (sentObj.password) {
                         objFromDb.hashed_password = undefined;
                     }
                 }
@@ -735,7 +741,7 @@ module.exports = {
                     // only the authenticated same owner is allowed to edit
                     if (!objFromDb.owner.equals(req.user.id)) {
                         return next(new error.NotAuthorizedError('authenticated user is not authorized ' +
-                            'to update this ressource because he is not owner of the stored ressource', {
+                        'to update this ressource because he is not owner of the stored ressource', {
                             user: req.user.id,
                             owner: objFromDb.owner
                         }));
@@ -745,7 +751,7 @@ module.exports = {
                     if (sentObj.owner) {
                         if (!objFromDb.owner.equals(sentObj.owner)) {
                             return next(new error.NotAuthorizedError('authenticated user is not authorized ' +
-                                'to change the owner of this object', {
+                            'to change the owner of this object', {
                                 currentOwner: objFromDb.owner,
                                 requestedOwner: sentObj.owner
                             }));
@@ -787,12 +793,12 @@ module.exports = {
         populate: {
             "name": "populate",
             "description": 'populates specified reference properties of the retrieved ressource with the full object,' +
-                ' e.g. comments.author is of type ObjectId ref User, if you want the full user object instead of the ObjectId' +
-                'add this queryParam: "populate="author". Supports multiple space separated values, also allows to populate' +
-                'embedded subobject properties by using .-notation. Limitation: Only allows to populate over one DB-Collection, meaning' +
-                'you can populate the comments.author, but you cannot populate ActivityEvent.Comment.Author, use ' +
-                '"populatedeep" if you need this. \n' +
-                'Use with caution, it may impact performance! ',
+            ' e.g. comments.author is of type ObjectId ref User, if you want the full user object instead of the ObjectId' +
+            'add this queryParam: "populate="author". Supports multiple space separated values, also allows to populate' +
+            'embedded subobject properties by using .-notation. Limitation: Only allows to populate over one DB-Collection, meaning' +
+            'you can populate the comments.author, but you cannot populate ActivityEvent.Comment.Author, use ' +
+            '"populatedeep" if you need this. \n' +
+            'Use with caution, it may impact performance! ',
             "dataType": 'string',
             "required": false,
             "allowMultiple": true,
@@ -801,8 +807,8 @@ module.exports = {
         populatedeep: {
             "name": "populatedeep",
             "description": 'populates specified reference deep properties of the retrieved ressource with the full object,' +
-                'use this if you need to go over more than 1 collection, see documentation of "populate" \n' +
-                'Use with caution, it may impact performance! ',
+            'use this if you need to go over more than 1 collection, see documentation of "populate" \n' +
+            'Use with caution, it may impact performance! ',
             "dataType": 'string',
             "required": false,
             "allowMultiple": true,

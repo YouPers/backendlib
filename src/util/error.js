@@ -140,6 +140,7 @@ Object.keys(CODES).forEach(function (k) {
             }
         };
 
+        // handle case when only one argument provided,
         if(!cause && message && typeof message !== 'string') {
             cause = message;
         } else if(message && typeof message === 'string') {
@@ -160,6 +161,9 @@ Object.keys(CODES).forEach(function (k) {
         // send error message in client response
         opts.body.message = opts.message;
         opts.body.code = opts.restCode;
+        if (cause.message) {
+            opts.body.cause = cause.message;
+        }
 
         var args = [ opts, opts.message ];
         restify.RestError.apply(this, args);

@@ -119,9 +119,14 @@ module.exports = {
         swagger.configureSwaggerPaths("", "/api-docs", "");
 
         swagger.setErrorHandler(function (req, res, err) {
-            req.log.error({req: req, res: res, err: err, body: req.body}, "Uncaught error in Swagger ErrorHandler");
-            res.send(new error.InternalError(err, err.message || 'unexpected error'));
-            return (true);
+
+            if (err.statusCode && err.restCode) {
+                req.log.error({req: req, res: res, err: err, body: req.body}, "Uncaught error in Swagger ErrorHandler");
+                res.send(err.statusCode, err);
+            } else {
+                req.log.error({req: req, res: res, err: err, body: req.body}, req.method + " failed for path '" + require('url').parse(req.url).href + "': " + error);
+                res.send(500, new error.InternalError(err.message || 'unexpected error', err));
+            }
         });
 
         auth.setupPassport(passport);
