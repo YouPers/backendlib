@@ -789,7 +789,7 @@ module.exports = {
     params: {
         filter: {
             "name": "filter",
-            "description": "Filters the results by adding a where clause, use the following format: filter[property]=value. You can prepend property with +,- to change the query: + leads to an AND condition, - leads to a OR condition, no prefix leads to a WHERE condition. You may prefix the value with <, <<, >, >>, ! to change how to query for the value: < is 'lower or equal', << is strictly lower, > is 'larger or equal, >> is strictly larger, ! is NOT equal ($not for strings, $ne for any other type), default is 'equals' (interpreted as mongo-regular expression ($regex) for type String, $eq for all other types). Example: filter[+created]==>>2015-04-14T08:55:25.202Z",
+            "description": "Filters the results by adding a where clause, use the following format: filter[property]=value. You can prepend property with +,- to change the query: + leads to an AND condition, - leads to a OR condition, no prefix leads to a WHERE condition. You may prefix the value with <, <<, >, >>, !, *, *! to change how to query for the value: < is 'lower or equal', << is strictly lower, > is 'larger or equal, >> is strictly larger, ! is NOT equal ($not for strings, $ne for any other type), default is 'equals' (interpreted as mongo-regular expression ($regex) for type String, $eq for all other types), * tests returns docs where property exists (value after * is ignored), *! returns docs where the property does not exists (value after *! is ignored). Example: filter[+created]==>>2015-04-14T08:55:25.202Z",
             "dataType": 'string',
             "required": false,
             "allowMultiple": true,
