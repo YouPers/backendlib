@@ -66,7 +66,7 @@ module.exports = {
                         return myValue[_.keys(myValue)[0]];
                     } else if (nrOfLocalesLoaded === 0) {
                         // TODO: find a way to deliver a reasonable Fallback in this case, needs adjusting of the querySelector!!!
-                        return "ZZZ_MISSING TRANSLATION";
+                        return "";
                     } else {
                         // many locales loaded, --> so we give him a reasonable default
                         return  myValue[this.$locale || defaultLanguage] || myValue['en'] || myValue[_.keys(myValue)[0]];
@@ -132,8 +132,10 @@ module.exports = {
 
                 _.forEach(multilingualValues, function (prop) {
 
-                    // enable the virtual
-                    ret[prop] = doc[prop];
+                    // enable the virtual if there is a value available
+                    if (doc[prop]) {
+                        ret[prop] = doc[prop];
+                    }
 
                     // the real stored db value is hidden from the client.
                     delete ret[prop + 'I18n'];
