@@ -297,7 +297,7 @@ var _addFilter = function (queryParams, dbquery, Model) {
                 method = 'where';
         }
 
-        if (type === ObjectId) {
+        if (type === ObjectId && queryValue[0] !== '*') {
             var qp = {};
             var multipleValues = queryValue.split(',');
 
