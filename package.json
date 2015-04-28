@@ -41,6 +41,7 @@
     "email-templates": "1.2.x",
     "ejs": "2.3.x",
     "node-gcm": "*",
+    "apn": "1.7.x",
     "rimraf": "*",
     "bcrypt": "0.8.x",
     "aws-sdk": "2.1.x"
