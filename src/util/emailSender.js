@@ -1,4 +1,3 @@
-
 var crypto = require('crypto');
 
 module.exports = function (config, templatesDir) {
@@ -26,7 +25,7 @@ module.exports = function (config, templatesDir) {
             smtpTransport.close();
         },
 
-        renderEmailTemplate: function(templateName, locals, cb) {
+        renderEmailTemplate: function (templateName, locals, cb) {
             emailTemplates(templatesDir, function (err, template) {
                 if (err) {
                     return cb(err);
@@ -41,7 +40,7 @@ module.exports = function (config, templatesDir) {
 
         },
 
-        sendEmail: function (from, to, subject, templateName, locals, mailExtensions) {
+        sendEmail: function (from, to, subject, templateName, locals, mailExtensions, cb) {
 
             log.debug({emailTo: to}, 'loading templates for sending: ' + templateName);
 
@@ -53,62 +52,89 @@ module.exports = function (config, templatesDir) {
             emailTemplates(templatesDir, function (err, template) {
                 if (err) {
                     log.error({err: err}, 'error during parsing of all email-templates');
-                    throw err;
-                } else {
-
-                    _.extend(locals, {
-                        from: from,
-                        to: to,
-                        subject: subject
-                    });
-
-                    log.debug({emailTo: to}, 'templating email: ' + templateName);
-                    // Send a single email
-                    template(templateName, locals, function (err, html, text) {
-                            if (err) {
-                                log.error({err: err, locals: locals}, "error during email rendering for :" + to + " template: " + templateName);
-                                var myErr =  new Error("error during parsing of all email-templates");
-                                myErr.cause = err;
-                                myErr.code = 'MailRenderingError';
-                                throw myErr;
-                            } else {
-                                var mail = {
-                                    from: from || fromDefault, // sender address
-                                    to: to, // list of receivers
-                                    subject: subject, // Subject line
-                                    text: text, // plaintext body
-                                    html: html // html body
-                                };
-                                if (config.email.tracking && config.email.tracking.enabled === "enabled") {
-                                    mail.headers = {
-                                        "X-Mailjet-TrackOpen": "1",
-                                        "X-Mailjet-TrackClick": "1"
-                                    };
-                                }
-                                if (mailExtensions) {
-                                    _.extend(mail, mailExtensions);
-                                }
-                                log.debug({emailTo: to}, 'trying to send email: ' + templateName);
-
-                                if (config.email.enabled !== "disabled") {
-                                    smtpTransport.sendMail(mail, function (err, responseStatus) {
-                                        if (err) {
-                                            log.error({err: err, data: err.data}, "error while sending email for: " + to + " template: " + templateName);
-                                        } else {
-                                            log.info({responseStatus: responseStatus}, "email sent: " + to + " template: " + templateName);
-                                        }
-                                    });
-                                } else {
-                                    log.info({from: mail.from, to: mail.to, subject: mail.subject, text: mail.text}, "email sending disabled in config: this email was NOT sen (HTML only shown on debug log level");
-                                    log.debug({from: mail.from, to: mail.to, subject: mail.subject, html: mail.html}, "html email content");
-                                }
-                            }
-
-                        }
-                    );
-
-
+                    if (cb) {
+                        return cb(err);
+                    } else {
+                        // this is a major error, we take down the process
+                        throw(err);
+                    }
                 }
+
+                _.extend(locals, {
+                    from: from,
+                    to: to,
+                    subject: subject
+                });
+
+                log.debug({emailTo: to}, 'templating email: ' + templateName);
+                // Send a single email
+
+                template(templateName, locals, function (err, html, text) {
+                    if (err) {
+                        log.error({
+                            err: err,
+                            locals: locals
+                        }, "error during email rendering for :" + to + " template: " + templateName);
+                        var myErr = new Error("error during email rendering for :" + to + " template: " + templateName);
+                        myErr.cause = err;
+                        myErr.code = 'MailRenderingError';
+                        if (_.isFunction(cb)) {
+                            return cb(myErr);
+                        } else {
+                            // the caller did not care about error, we log and return
+                            return;
+                        }
+                    }
+                    var mail = {
+                        from: from || fromDefault, // sender address
+                        to: to, // list of receivers
+                        subject: subject, // Subject line
+                        text: text, // plaintext body
+                        html: html // html body
+                    };
+                    if (config.email.tracking && config.email.tracking.enabled === "enabled") {
+                        mail.headers = {
+                            "X-Mailjet-TrackOpen": "1",
+                            "X-Mailjet-TrackClick": "1"
+                        };
+                    }
+                    if (mailExtensions) {
+                        _.extend(mail, mailExtensions);
+                    }
+                    log.debug({emailTo: to}, 'trying to send email: ' + templateName);
+
+                    if (config.email.enabled !== "disabled") {
+                        smtpTransport.sendMail(mail, function (err, responseStatus) {
+                            if (err) {
+                                log.error({
+                                    err: err,
+                                    data: err.data
+                                }, "error while sending email for: " + to + " template: " + templateName);
+                            } else {
+                                log.info({responseStatus: responseStatus}, "email sent: " + to + " template: " + templateName);
+                            }
+                        });
+                    } else {
+                        log.info({
+                            from: mail.from,
+                            to: mail.to,
+                            subject: mail.subject,
+                            text: mail.text
+                        }, "email sending disabled in config: this email was NOT sen (HTML only shown on debug log level");
+                        log.debug({
+                            from: mail.from,
+                            to: mail.to,
+                            subject: mail.subject,
+                            html: mail.html
+                        }, "html email content");
+                    }
+                    if (_.isFunction(cb)) {
+                        return cb(null);
+                    }
+
+                });
+
+
             });
         }
     };
