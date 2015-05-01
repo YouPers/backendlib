@@ -55,7 +55,7 @@ module.exports = function (config, templatesDir) {
                     log.error({err: err}, 'error during parsing of all email-templates');
                     var myErr =  new Error("error during parsing of all email-templates");
                     myErr.cause = err;
-                    myErr.code = 'MailRenderingError'
+                    myErr.code = 'MailRenderingError';
                     throw myErr;
                 } else {
 
