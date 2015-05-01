@@ -53,10 +53,7 @@ module.exports = function (config, templatesDir) {
             emailTemplates(templatesDir, function (err, template) {
                 if (err) {
                     log.error({err: err}, 'error during parsing of all email-templates');
-                    var myErr =  new Error("error during parsing of all email-templates");
-                    myErr.cause = err;
-                    myErr.code = 'MailRenderingError';
-                    throw myErr;
+                    throw err;
                 } else {
 
                     _.extend(locals, {
@@ -70,7 +67,10 @@ module.exports = function (config, templatesDir) {
                     template(templateName, locals, function (err, html, text) {
                             if (err) {
                                 log.error({err: err, locals: locals}, "error during email rendering for :" + to + " template: " + templateName);
-                                throw err;
+                                var myErr =  new Error("error during parsing of all email-templates");
+                                myErr.cause = err;
+                                myErr.code = 'MailRenderingError';
+                                throw myErr;
                             } else {
                                 var mail = {
                                     from: from || fromDefault, // sender address
