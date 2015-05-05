@@ -86,8 +86,8 @@ module.exports = function (config) {
                 var note = new apn.Notification();
 
                 note.expiry = Math.floor(Date.now() / 1000) + TIME_TO_LIVE;
-                note.badge = 3;
-                note.alert = "\uD83D\uDCE7 \u2709 You have a new message";
+                note.badge = data.badge || 1;
+                note.alert = data.message;
                 note.payload = data;
                 var result = {
                     sent: 0,
