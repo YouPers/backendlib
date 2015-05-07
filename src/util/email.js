@@ -64,10 +64,28 @@ module.exports = function (config) {
 
     };
 
+    var sendBatchResultMail = function (email, result, i18n) {
+        var from = config.email.fromString;
+        var to = email;
+        var subject = "Batch Run: " + (result.instance || 'localDevMachine') + ': ' + result.batchName + '/' + result.batchId + ' started: ' + result.started;
+
+        var locals = {
+            salutation: "Hello Batch Operator: There is news for you!",
+            text: "<pre>" + JSON.stringify(result,undefined,4 ) + "</pre>",
+            imgServer: config.webclientUrl,
+            link: "",
+            linkText: ""
+        };
+        _.extend(locals, defaultLocals(i18n));
+        emailSender.sendEmail(from, to, subject, 'genericYouPersMail', locals);
+
+    };
+
 
     return {
         sendEmailVerification: sendEmailVerification,
         sendPasswordResetMail: sendPasswordResetMail,
+        sendBatchResultMail: sendBatchResultMail,
         encryptLinkToken: emailSender.encryptLinkToken,
         decryptLinkToken: emailSender.decryptLinkToken
     };

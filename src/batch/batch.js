@@ -41,21 +41,74 @@ var genericBatch = function genericBatch(feeder, worker, context) {
         if (err) {
             log.error({err: err}, "Error in Batch-Feeder, ABORTING");
             return mongoose.connection.close();
-        } else {
-            log.info("Found " + work.length + " work items. Starting parallel processing with concurrency: " + concurrency);
-
-            async.forEachLimit(work, concurrency, function (workItem, done) {
-                log.info({item: workItem}, 'Processing WorkItem');
-                var myArgs = _.clone(args);
-                myArgs.unshift(workItem, done);
-                return worker.apply(context, myArgs);
-            }, function (err) {
-                if (err) {
-                    log.error({err: err}, 'Batch Job: ' + context.name + ":" + context.batchId + " : error while completing the workItems");
-                }
-                mongoose.connection.close();
-            });
         }
+
+        log.info("Found " + work.length + " work items. Starting parallel processing with concurrency: " + concurrency);
+
+        var batchResult =  {
+            started: new Date(),
+            batchName: context.name,
+            batchId: context.batchId,
+            instance: process.env.NODE_ENV,
+            foundWorkItems: work.length,
+            success: [],
+            errored: []
+        };
+
+        async.forEachLimit(work, concurrency, function (workItem, done) {
+            workItem.workItemId =  workItem.workItemId || workItem._id || workItem.toString();
+
+            log.info({item: workItem.workItemId}, 'Processing WorkItem');
+            var myArgs = _.clone(args);
+
+            function  workerCb (err, result) {
+                if (err && !err.isRecoverable) {
+                    batchResult.errored.push({id: workItem.workItemId, err: err});
+                    return done(err);
+                } else if (err && err.isRecoverable) {
+                    batchResult.errored.push({id: workItem.workItemId, err: err});
+                    return done();
+                }
+                batchResult.success.push({id: workItem.workItemId, result: result});
+                return done();
+            }
+
+            myArgs.unshift(workItem, workerCb);
+
+            // wrapping the "unknown, potentially throwing worker function" with try/catch
+            // and forwarding a potential uncaught error to the async caller
+            try {
+                return worker.apply(context, myArgs);
+            } catch (err) {
+                var myErr = new Error('WorkItemProcessingError');
+                myErr.cause = err;
+                myErr.workItem = workItem.workItemId || workItem._id;
+                batchResult.errored.push({id: workItem.workItemId, err: err});
+                return done(myErr);
+            }
+        }, function (err) {
+            if (err) {
+                log.error({err: err, batchResult: batchResult}, 'Batch Job: ' + context.name + ":" + context.batchId + " : Error while completing the workItems");
+            } else {
+                log.info({batchResult: batchResult}, 'Batch Job: ' + context.name + ":" + context.batchId + ": FINISHED");
+            }
+
+            batchResult.ended = new Date();
+
+            if (context.config &&
+                context.config.batch &&
+                context.config.batch.resultRecipients &&
+                _.isArray(context.config.batch.resultRecipients) &&
+                context.config.batch.resultRecipients.length >0) {
+
+                var email = require('../util/email')(context.config);
+                _.forEach(context.config.batch.resultRecipients, function(emailAdress) {
+                    email.sendBatchResultMail(emailAdress, batchResult, context.i18n);
+                });
+            }
+            mongoose.connection.close();
+        });
+
     };
 
     // passing on the additional arguments we were called with to the feeder function, we remove the first three
