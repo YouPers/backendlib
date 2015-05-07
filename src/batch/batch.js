@@ -87,13 +87,19 @@ var genericBatch = function genericBatch(feeder, worker, context) {
                 return done(myErr);
             }
         }, function (err) {
+            batchResult.ended = new Date();
+            batchResult.runTimeTotal = (batchResult.ended - batchResult.started) / 1000;
+            if (batchResult.foundWorkItems && batchResult.foundWorkItems !== 0) {
+                batchResult.avgItemTime = batchResult.runTimeTotal / batchResult.foundWorkItems;
+            }
+
             if (err) {
                 log.error({err: err, batchResult: batchResult}, 'Batch Job: ' + context.name + ":" + context.batchId + " : Error while completing the workItems");
             } else {
                 log.info({batchResult: batchResult}, 'Batch Job: ' + context.name + ":" + context.batchId + ": FINISHED");
             }
 
-            batchResult.ended = new Date();
+
 
             if (context.config &&
                 context.config.batch &&

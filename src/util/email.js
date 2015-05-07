@@ -69,6 +69,11 @@ module.exports = function (config) {
         var to = email;
         var subject = "Batch Run: " + (result.instance || 'localDevMachine') + ': ' + result.batchName + '/' + result.batchId + ' started: ' + result.started;
 
+        if (result.errored.length === 0) {
+            subject = "Successful " + subject;
+        } else {
+            subject = "Errors in " + subject;
+        }
         var locals = {
             salutation: "Hello Batch Operator: There is news for you!",
             text: "<pre>" + JSON.stringify(result,undefined,4 ) + "</pre>",
