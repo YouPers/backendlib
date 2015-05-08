@@ -77,6 +77,7 @@ module.exports = function (config, templatesDir) {
                         }, "error during email rendering for :" + to + " template: " + templateName);
                         var myErr = new Error("error during email rendering for :" + to + " template: " + templateName);
                         myErr.cause = err;
+                        myErr.isRecoverable = true;
                         myErr.code = 'MailRenderingError';
                         if (_.isFunction(cb)) {
                             return cb(myErr);

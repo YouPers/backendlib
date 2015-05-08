@@ -46,17 +46,19 @@ var genericBatch = function genericBatch(feeder, worker, context) {
         log.info("Found " + work.length + " work items. Starting parallel processing with concurrency: " + concurrency);
 
         var batchResult =  {
-            started: new Date(),
             batchName: context.name,
             batchId: context.batchId,
             instance: process.env.NODE_ENV,
+            started: new Date(),
             foundWorkItems: work.length,
+            successCount: 0,
+            errorCount: 0,
             success: [],
             errored: []
         };
 
         async.forEachLimit(work, concurrency, function (workItem, done) {
-            workItem.workItemId =  workItem.workItemId || workItem._id || workItem.toString();
+            workItem.workItemId =  workItem.workItemId || workItem.email || workItem.username || workItem._id || workItem.toString();
 
             log.info({item: workItem.workItemId}, 'Processing WorkItem');
             var myArgs = _.clone(args);
@@ -80,14 +82,17 @@ var genericBatch = function genericBatch(feeder, worker, context) {
             try {
                 return worker.apply(context, myArgs);
             } catch (err) {
-                var myErr = new Error('WorkItemProcessingError');
+                var myErr = new Error('WorkItemProcessingError: ' + err.message);
                 myErr.cause = err;
                 myErr.workItem = workItem.workItemId || workItem._id;
-                batchResult.errored.push({id: workItem.workItemId, err: err});
+                log.error({err: err}, "Uncaught Error in Batch Run: " + err.message);
+                batchResult.errored.push({id: workItem.workItemId, message: err.message, code: err.code});
                 return done(myErr);
             }
         }, function (err) {
             batchResult.ended = new Date();
+            batchResult.successCount = batchResult.success.length;
+            batchResult.errorCount = batchResult.errored.length;
             batchResult.runTimeTotal = (batchResult.ended - batchResult.started) / 1000;
             if (batchResult.foundWorkItems && batchResult.foundWorkItems !== 0) {
                 batchResult.avgItemTime = batchResult.runTimeTotal / batchResult.foundWorkItems;
@@ -98,8 +103,6 @@ var genericBatch = function genericBatch(feeder, worker, context) {
             } else {
                 log.info({batchResult: batchResult}, 'Batch Job: ' + context.name + ":" + context.batchId + ": FINISHED");
             }
-
-
 
             if (context.config &&
                 context.config.batch &&
