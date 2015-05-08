@@ -8,7 +8,7 @@ module.exports = function (config) {
 
     var imagePostFn = function () {
         return function (req, res, next) {
-            req.log.debug({req: req, body: req.body}, "imagePostFn");
+            req.log.debug({req: req, body: req.body, reqFiles: req.files}, "imagePostFn");
 
             if (!req.files || !req.files.file || !req.files.file.path || !req.files.file.name) {
                 return next(new error.MissingParameterError({ required: ['file', 'file.name']} ));
@@ -38,7 +38,7 @@ module.exports = function (config) {
                 res.header('Location', image);
 
                 // send response
-                res.send(201);
+                res.send(201, {url: image});
                 return next();
             });
         };
