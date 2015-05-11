@@ -43,7 +43,7 @@ module.exports = function (swagger) {
                 },
                 {
                     paramType: "query",
-                    name: "range",
+                    name: "timeRange",
                     description: "The timerange to constrain the stats to",
                     dataType: "string",
                     enum: ['day','week','month','year','all'],
