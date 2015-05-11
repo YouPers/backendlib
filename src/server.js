@@ -34,17 +34,23 @@ module.exports = {
         // setting logging of request and response
         // setup better error stacktraces
 
-        server.pre(function (request, response, next) {
-            request.log.debug({req_id: request.getId(), req: request}, 'start processing request');
+        server.pre(function (req, response, next) {
+            req.log.debug({req_id: req.getId(), req: req, path:  (req.route && req.router.path) ||req.url, method: req.method}, 'start processing request');
             return next();
         });
 
 
         server.on('uncaughtException', function (req, res, route, err) {
-            req.log.error({err: err});
+            req.log.error({err: err, method: req.method, url: req.url, path: (req.route && req.router.path) ||req.url, message: err.message}, "uncaught server exception in restify server");
             console.error('Caught uncaught server Exception: ' + err);
             res.send(new error.InternalError(err, err.message || 'unexpected error'));
             return (true);
+        });
+
+        process.on('uncaughtException', function(err) {
+            logger.error({err:err, message: err.message}, "UNCAUGHT PROCESS ERROR: logging to error: " + err.message);
+            console.error(new Date().toString() + "Exiting process because of Uncaught Error: " + err.message + " err: " + err);
+            process.exit(1);
         });
 
         server.on('after', function (req, res, route, err) {
