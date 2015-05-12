@@ -118,4 +118,25 @@ module.exports = function (swagger, config) {
         action: auth.loginAndExchangeTokenAjax
     });
 
+    swagger.addOperation({
+        spec: {
+            description: "logout",
+            path: "/logout",
+            notes: "disconnects this user from a device",
+            summary: "disconnects a user from a device",
+            method: "POST",
+            params: [
+                swagger.headerParam("Authentication", "HTTP Basic Auth credentials or HTTP Bearer Token", "string", false),
+                swagger.bodyParam("token",
+                    "the device Token", "String", false),
+            ],
+            responseClass: "User",
+            "errorResponses": [],
+            "beforeCallbacks": [],
+            "nickname": "logout",
+            accessLevel: 'al_user'
+        },
+        action: auth.logout
+    });
+
 };

@@ -23,19 +23,19 @@ var roles = {
         individual: [roles.anonymous, roles.individual, roles.productadmin, roles.systemadmin],
         campaignlead: [roles.individual],
         orgadmin: [roles.individual, roles.productadmin, roles.systemadmin],
-        productadmin: [ roles.productadmin, roles.systemadmin],
-        systemadmin: [ roles.systemadmin]
+        productadmin: [roles.productadmin, roles.systemadmin],
+        systemadmin: [roles.systemadmin]
     },
     accessLevels = {
         al_all: [roles.anonymous, roles.individual, roles.orgadmin, roles.campaignlead, roles.productadmin, roles.systemadmin],
         al_anonymousonly: [roles.anonymous],
-        al_user: [roles.individual, roles.orgadmin, roles.campaignlead, roles.productadmin, roles.systemadmin ],
-        al_individual: [roles.individual, roles.productadmin, roles.systemadmin ],
-        al_campaignlead: [roles.orgadmin, roles.campaignlead, roles.systemadmin ],
-        al_orgadmin: [roles.orgadmin, roles.systemadmin ],
+        al_user: [roles.individual, roles.orgadmin, roles.campaignlead, roles.productadmin, roles.systemadmin],
+        al_individual: [roles.individual, roles.productadmin, roles.systemadmin],
+        al_campaignlead: [roles.orgadmin, roles.campaignlead, roles.systemadmin],
+        al_orgadmin: [roles.orgadmin, roles.systemadmin],
         al_admin: [roles.productadmin, roles.systemadmin],
-        al_productadmin: [ roles.productadmin, roles.systemadmin ],
-        al_systemadmin: [roles.systemadmin ]
+        al_productadmin: [roles.productadmin, roles.systemadmin],
+        al_systemadmin: [roles.systemadmin]
     };
 
 
@@ -131,7 +131,7 @@ function getAuthHandlers(config) {
             throw new Error('unknown accessLevel: ' + accessLevel);
         }
         return function (req, res, next) {
-            passport.authenticate(['bearer', 'basic' ], function (err, user, callenges, statuses) {
+            passport.authenticate(['bearer', 'basic'], function (err, user, callenges, statuses) {
                 if (err) {
                     req.log.error({err: err}, 'error when trying to authenticate');
                     return next(new error.InvalidArgumentError(err));
@@ -149,8 +149,6 @@ function getAuthHandlers(config) {
     }
 
 
-
-
     /**
      * checkes whether the supplied credentials are belonging to a valid user in the local database.
      * The parameter username may also be used with the user's email address.cd
@@ -163,17 +161,19 @@ function getAuthHandlers(config) {
      */
     var validateLocalUsernamePassword = function (username, password, done) {
 
-        _loadUser({$or: [
-            { username: username.toLowerCase() },
-            { email: username.toLowerCase()}
-        ]}, function (err, user) {
+        _loadUser({
+            $or: [
+                {username: username.toLowerCase()},
+                {email: username.toLowerCase()}
+            ]
+        }, function (err, user) {
             if (err) {
                 return done(err);
             }
             if (!user) {
                 return done(null, false);
             }
-            return user.validPassword(password, function(err, isValid) {
+            return user.validPassword(password, function (err, isValid) {
                 if (isValid) {
                     return _checkLastLogin(user, done);
                 } else {
@@ -216,7 +216,7 @@ function getAuthHandlers(config) {
 
     function _getOAuth2ProviderCallbackFn(providerName, providerProfileToUserMappingFn, profileUpdateFn) {
         return function (accessToken, refreshToken, providerProfile, done) {
-            _loadUser({provider: providerName, providerId: providerProfile.id }, function (err, user) {
+            _loadUser({provider: providerName, providerId: providerProfile.id}, function (err, user) {
                 if (err) {
                     return done(err);
                 }
@@ -307,7 +307,7 @@ function getAuthHandlers(config) {
         if (!user.lastLogin || (user.lastLogin && moment(user.lastLogin).isBefore(moment().startOf('day')))) {
             // publish event: first login today
             user.lastLogin = new Date();
-            user.save(function(err, user) {
+            user.save(function (err, user) {
                 if (err) {
                     return cb(err);
                 }
@@ -338,7 +338,7 @@ function getAuthHandlers(config) {
                         return done(null, false);
                     }
 
-                    _checkLastLogin(user, function(err) {
+                    _checkLastLogin(user, function (err) {
                         if (err) {
                             return err;
                         }
@@ -449,11 +449,37 @@ function getAuthHandlers(config) {
 
     }
 
+    function logoutFn(req, res, next) {
+        if (!req.params.token) {
+            return next(new error.MissingParameterError("paramter token required"));
+        }
+
+        var profile = req.user.profile;
+
+        var deviceToRemove = _.find(profile.devices, function (dev) {
+            return dev.token === req.params.token;
+        });
+
+        if (deviceToRemove) {
+            profile.devices.pull(deviceToRemove);
+        }
+
+        profile.save(function (err, result) {
+            if (err) {
+                return next(err);
+            }
+            res.send(201, {removedDevice: deviceToRemove});
+            return next();
+        });
+
+    }
+
     return {
         roleBasedAuth: roleBasedAuth,
         loginAndExchangeTokenRedirect: loginAndExchangeTokenRedirect,
         loginAndExchangeTokenAjax: loginAndExchangeTokenAjax,
-        setupPassport: setupPassport
+        setupPassport: setupPassport,
+        logout: logoutFn
     };
 }
 
