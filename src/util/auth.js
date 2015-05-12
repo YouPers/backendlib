@@ -450,14 +450,14 @@ function getAuthHandlers(config) {
     }
 
     function logoutFn(req, res, next) {
-        if (!req.params.token) {
+        if (!req.params.token && !req.body.token) {
             return next(new error.MissingParameterError("paramter token required"));
         }
 
         var profile = req.user.profile;
 
         var deviceToRemove = _.find(profile.devices, function (dev) {
-            return dev.token === req.params.token;
+            return dev.token === (req.params.token || req.body.token);
         });
 
         if (deviceToRemove) {
