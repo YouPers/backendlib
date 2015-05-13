@@ -71,7 +71,9 @@ var genericBatch = function genericBatch(feeder, worker, context) {
                     batchResult.errored.push({id: workItem.workItemId, err: err});
                     return done();
                 }
-                batchResult.success.push({id: workItem.workItemId, result: result});
+                if (result !== false) {
+                    batchResult.success.push({id: workItem.workItemId, result: result});
+                }
                 return done();
             }
 
