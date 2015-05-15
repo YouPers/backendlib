@@ -69,11 +69,11 @@ module.exports = {
                         return "";
                     } else {
                         // many locales loaded, --> so we give him a reasonable default
-                        return  myValue[this.$locale || defaultLanguage] || myValue['en'] || myValue[_.keys(myValue)[0]];
+                        return myValue[this.$locale || defaultLanguage] || myValue['en'] || myValue[_.keys(myValue)[0]];
                     }
                 })
                 .set(function (value) {
-                    if(!this[key + 'I18n']) {
+                    if (!this[key + 'I18n']) {
                         this[key + 'I18n'] = {};
                     }
                     this[key + 'I18n'][this.$locale || defaultLanguage] = value;
@@ -126,11 +126,24 @@ module.exports = {
          */
         mySchema.set('toJSON', {
             transform: function (doc, ret, options) {
-                if (!ret) {return;}
+                if (!ret) {
+                    return;
+                }
                 ret.id = ret._id;
                 delete ret._id;
+                var i18nProps =
+                    _(doc.schema.paths)
+                        .filter(function (path) {
+                            return path.path.indexOf('I18n') !== -1;
+                        })
+                        .map(function (path) {
+                            var propPath = path.path.split('.')[0];
+                            return propPath.substring(0,propPath.length-4);
+                        })
+                        .uniq()
+                        .value();
 
-                _.forEach(multilingualValues, function (prop) {
+                _.forEach(i18nProps, function (prop) {
 
                     // enable the virtual if there is a value available
                     if (doc[prop]) {
@@ -158,7 +171,8 @@ module.exports = {
                         });
                     }
                 }
-            }});
+            }
+        });
 
         /**
          * This function takes a mongoose Schema description and outputs the same schema as a swagger model to be
@@ -170,7 +184,8 @@ module.exports = {
             return swaggerAdapter.getSwaggerModel(this);
         };
 
-        mySchema.plugin(timestamps, {updatedAt: 'updated', createdAt: 'created'
+        mySchema.plugin(timestamps, {
+            updatedAt: 'updated', createdAt: 'created'
         });
 
         mySchema.methods.getStatsString = function () {
@@ -189,7 +204,7 @@ module.exports = {
         // if the definition object is empty.
 
         if (!BaseSchema || _.keys(definition).length === 0) {
-            mySchema.post('remove', function(doc) {
+            mySchema.post('remove', function (doc) {
                 var DeleteJournal = mongoose.model('Deletejournal');
                 var journal = new DeleteJournal(
                     {
