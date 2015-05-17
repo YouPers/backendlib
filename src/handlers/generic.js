@@ -297,7 +297,7 @@ var _addFilter = function (queryParams, dbquery, Model) {
                 method = 'where';
         }
 
-        if (type === ObjectId && queryValue[0] !== '*') {
+        if (type === ObjectId && queryValue[0] !== '*' ) {
             var qp = {};
             var multipleValues = queryValue.split(',');
 
@@ -309,10 +309,19 @@ var _addFilter = function (queryParams, dbquery, Model) {
                     return mongoose.Types.ObjectId(val);
                 })};
             } else {
-                if (!mongoose.Types.ObjectId.isValid(queryValue)) {
-                    throw new error.InvalidArgumentError('the value "' +queryValue + '" is not a valid ObjectId. Use a valid ObjectId to filter for this porperty');
+                if (queryValue[0] === '!') {
+                    var oidString = queryValue.substring(1);
+                    if (!mongoose.Types.ObjectId.isValid(oidString)) {
+                        throw new error.InvalidArgumentError('the value "' +oidString + '" is not a valid ObjectId. Use a valid ObjectId to filter for this porperty');
+                    }
+                    qp[ret[2]] = {$ne: oidString};
+                } else {
+                    if (!mongoose.Types.ObjectId.isValid(queryValue)) {
+                        throw new error.InvalidArgumentError('the value "' +queryValue + '" is not a valid ObjectId. Use a valid ObjectId to filter for this porperty');
+                    }
+                    qp[ret[2]] = queryValue;
                 }
-                qp[ret[2]] = queryValue;
+
             }
             dbquery = dbquery[method](qp);
         } else {
