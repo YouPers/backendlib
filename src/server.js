@@ -41,7 +41,7 @@ module.exports = {
 
 
         server.on('uncaughtException', function (req, res, route, err) {
-            req.log.error({err: err, method: req.method, url: req.url, path: (req.route && req.router.path) ||req.url, message: err.message}, "uncaught server exception in restify server");
+            req.log.error({err: err, method: req.method, url: req.url, path: (req.route && req.route.path) ||req.url, message: err.message}, "uncaught server exception in restify server");
             console.error('Caught uncaught server Exception: ' + err);
             res.send(new error.InternalError(err, err.message || 'unexpected error'));
             return (true);
