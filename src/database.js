@@ -12,20 +12,38 @@ var initialize = function initialize(config, customModels, customModelPath, mode
     function _createAndLoadModels(path, schemaNames) {
         _.forEach(schemaNames, function (schemaName) {
             var schema = require(path + '/' + schemaName + schemaFileExt);
-            if(schemaExtensions && schemaExtensions[schemaName]) {
+            if (schemaExtensions && schemaExtensions[schemaName]) {
 
                 if (schemaExtensions[schemaName].properties) {
                     schema.add(schemaExtensions[schemaName].properties);
                 }
 
                 if (schemaExtensions[schemaName].statics) {
-                    _.forEach(schemaExtensions[schemaName].statics, function(value, key) {
-                        schema.statics[key]  = value;
+                    _.forEach(schemaExtensions[schemaName].statics, function (value, key) {
+                        schema.statics[key] = value;
+                    });
+                }
+                if (schemaExtensions[schemaName].hooks) {
+                    _.forEach(schemaExtensions[schemaName].hooks, function (value, hookType) {
+                        _.forEach(value, function (methods, hookName) {
+                            if (!_.isArray(methods)) {
+                                methods = [methods];
+                            }
+                            _.forEach(methods, function (method) {
+                                if (hookType === 'pre') {
+                                    schema.pre(hookName, method);
+                                } else if (hookType === 'post') {
+                                    schema.post(hookName, method);
+                                } else {
+                                    throw new Error('unsupported hook type: ' + hookType);
+                                }
+                            });
+                        });
                     });
                 }
             }
             var modelName = schemaName.charAt(0).toUpperCase() + schemaName.slice(1);
-            console.log("Loading model: "+modelName + " from: " + path + '/' + modelName);
+            console.log("Loading model: " + modelName + " from: " + path + '/' + modelName);
             var model = mongoose.model(modelName, schema);
             if (model.getSwaggerModel) {
                 swagger.addModels(model.getSwaggerModel());
@@ -36,7 +54,7 @@ var initialize = function initialize(config, customModels, customModelPath, mode
     // load models
     function _loadModels(modelPath, modelNames) {
         _.forEach(modelNames, function (modelName) {
-            console.log("Loading model: "+modelName + " from: " + modelPath + '/' + modelName + modelFileExt);
+            console.log("Loading model: " + modelName + " from: " + modelPath + '/' + modelName + modelFileExt);
             var model = require(modelPath + '/' + modelName + modelFileExt);
             if (model.getSwaggerModel) {
                 swagger.addModels(model.getSwaggerModel());
