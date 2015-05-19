@@ -30,7 +30,7 @@ function constructQuery(queryDef, options) {
         if (!options.scopeId) {
             throw new error.MissingParameterError("Illegal Arguments, when ScopeType is set, scopeId has to be passed as well");
         }
-        var queryVal = path.instance === 'String' ? options.scopeId : new ObjectId(options.scopeId);
+        var queryVal = (path.instance === 'String') ? options.scopeId : new ObjectId(options.scopeId);
         var scopePipelineEntry = {$match: {}};
 
         var allPropName = 'all' + _.capitalize(options.scopeType);
