@@ -24,18 +24,24 @@ function constructQuery(queryDef, options) {
 
         var path = model.schema.paths[options.scopeType];
 
-        if (!path ) {
+        if (!path) {
             throw new error.InvalidArgumentError("Illegal Arguments, when ScopeType not valid for this query");
         }
-        if (!options.scopeId ) {
+        if (!options.scopeId) {
             throw new error.MissingParameterError("Illegal Arguments, when ScopeType is set, scopeId has to be passed as well");
         }
+        var queryVal = (path.instance === 'String') ? options.scopeId : new ObjectId(options.scopeId);
         var scopePipelineEntry = {$match: {}};
 
-        if (path.instance === 'String') {
-            scopePipelineEntry.$match[options.scopeType] = options.scopeId;
+        var allPropName = 'all' + _.capitalize(options.scopeType);
+        if (model.schema.paths[allPropName]) {
+            var orClauseNormalProp = {};
+            orClauseNormalProp[options.scopeType] = queryVal;
+            var orClauseAllProp = {};
+            orClauseAllProp[allPropName] = queryVal;
+            scopePipelineEntry.$match['$or'] = [orClauseNormalProp, orClauseAllProp];
         } else {
-            scopePipelineEntry.$match[options.scopeType] = new ObjectId(options.scopeId);
+            scopePipelineEntry.$match[options.scopeType] = queryVal;
         }
 
         if (!queryDef.ignoreScope) {
