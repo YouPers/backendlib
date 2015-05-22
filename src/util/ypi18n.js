@@ -27,7 +27,7 @@ var initialize = function initialize () {
         fallbackLng: 'de',
         supportedLngs: ['de','en', 'fr', 'it'],
         ns: {
-            namespaces: ['email', 'ical']
+            namespaces: ['email', 'ical', 'general']
         },
         resGetPath: 'translations/__ns__.__lng__.json',
         saveMissing: false,

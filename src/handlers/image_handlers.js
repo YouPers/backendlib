@@ -8,7 +8,7 @@ module.exports = function (config) {
 
     var imagePostFn = function () {
         return function (req, res, next) {
-            req.log.debug({req: req, body: req.body, reqFiles: req.files}, "imagePostFn");
+            req.log.trace({req: req, body: req.body, reqFiles: req.files}, "imagePostFn");
 
             if (!req.files || !req.files.file || !req.files.file.path || !req.files.file.name) {
                 return next(new error.MissingParameterError({ required: ['file', 'file.name'], received: req.files} ));
