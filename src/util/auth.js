@@ -406,7 +406,7 @@ function getAuthHandlers(config) {
 
             _storeDevice(req.user, device, function (err) {
                 if (err) {
-                    req.log(err);
+                    req.log.error(err);
                 }
             });
         }
