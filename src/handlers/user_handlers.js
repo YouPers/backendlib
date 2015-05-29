@@ -52,7 +52,9 @@ module.exports = function (config) {
                 }
 
                 // send verificationEmail
-                email.sendEmailVerification(newUser, req.i18n);
+                if(config.email.emailConfirmation !== 'disabled') {
+                    email.sendEmailVerification(newUser, req.i18n);
+                }
 
                 res.header('location', req.url + '/' + newUser._id);
                 res.send(201, newUser);
