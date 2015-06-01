@@ -21,6 +21,7 @@ module.exports = function (swagger, config) {
         action: function(req, res, next) {
             pushSender.sendPush(req.user, req.body, req.params.collapseKey || 'defaultCollapseKey', function(err, result) {
                 if (err) {
+                    req.log.error({err: err}, 'error sending push message');
                     return error.handleError(err, next);
                 }
                 res.send(result);

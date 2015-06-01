@@ -11,7 +11,8 @@ function addGenericRoutes(swagger, model, baseUrl, options) {
         DELETE: true,
         DELETEall: true,
         modelName: model.modelName,
-        accessLevel: 'al_user'
+        accessLevel: 'al_user',
+        fromAllOwners: false
     });
 
     var defaultGetParams = [
@@ -42,7 +43,7 @@ function addGenericRoutes(swagger, model, baseUrl, options) {
         op.spec.responseClass = 'Array[' + options.modelName + ']';
         op.spec.params = defaultGetParams;
         op.spec.nickname = 'getAll' + _.capitalize(options.modelName);
-        op.action = generic.getAllFn(baseUrl, model);
+        op.action = generic.getAllFn(baseUrl, model, options.fromAllOwners);
         swagger.addOperation(op);
     }
 
@@ -56,7 +57,7 @@ function addGenericRoutes(swagger, model, baseUrl, options) {
         op.spec.responseClass = _.capitalize(options.modelName);
         op.spec.params = defaultGetParams;
         op.spec.nickname = 'getOne' + _.capitalize(options.modelName);
-        op.action = generic.getByIdFn(baseUrl, model);
+        op.action = generic.getByIdFn(baseUrl, model, options.fromAllOwners);
         swagger.addOperation(op);
     }
 

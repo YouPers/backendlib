@@ -5,7 +5,7 @@ var mongoose = require('mongoose');
 
 module.exports = function (config) {
     var TIME_TO_LIVE = config.push.timeToLive || (60 * 60 * 24 * 4);
-    var NR_OF_RETRIES = config.push.nrOfRetries || 4;
+    var NR_OF_RETRIES = config.push.nrOfRetries || 2;
     var androidSender, apnConnection;
     var log = require('./log').getLogger(config);
 
