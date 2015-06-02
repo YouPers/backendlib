@@ -1,11 +1,17 @@
 var restify = require("restify"),
-    longjohn = require("longjohn"),
     fs = require("fs"),
     passport = require('passport'),
     swagger = require("swagger-node-restify"),
     ypi18n = require('./util/ypi18n'),
     error = require('./util/error'),
     _ = require('lodash');
+// setup better error stacktraces
+
+if (process.env.NODE_ENV !== 'production'){
+//    require('longjohn');
+//    longjohn.async_trace_limit = 10;  // defaults to 10
+//    longjohn.empty_frame = 'ASYNC CALLBACK';
+}
 
 
 module.exports = {
@@ -84,10 +90,6 @@ module.exports = {
 
             req.log.debug({res: res}, 'response sent');
         });
-
-        // setup better error stacktraces
-        longjohn.async_trace_limit = 10;  // defaults to 10
-        longjohn.empty_frame = 'ASYNC CALLBACK';
 
         // initialize i18n
         var i18n = ypi18n.initialize();

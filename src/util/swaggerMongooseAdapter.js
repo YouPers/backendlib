@@ -39,7 +39,7 @@ function getSwaggerModel(aMongooseModel) {
 
     var mainModel = createAndRegisterNewSwaggerModel(aMongooseModel.modelName);
 
-    var hiddenProps = aMongooseModel.toJsonConfig && aMongooseModel.toJsonConfig.hide || [];
+    var hiddenProps = aMongooseModel.toJsonConfig && aMongooseModel.toJsonConfig().hide || [];
     hiddenProps = hiddenProps.concat(['__v', '_id']);
     var fieldDescriptions = aMongooseModel.getFieldDescriptions && aMongooseModel.getFieldDescriptions() || {};
 

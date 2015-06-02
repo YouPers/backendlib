@@ -153,20 +153,20 @@ module.exports = {
                     // the real stored db value is hidden from the client.
                     delete ret[prop + 'I18n'];
                 });
-
-                if (doc.toJsonConfig) {
+                var jsonConf = _.isFunction(doc.toJsonConfig) && doc.toJsonConfig();
+                if (jsonConf) {
 
                     // include values from virtuals or manual set flags that are not part of the schema
-                    if (doc.toJsonConfig.include) {
-                        _.forEach(doc.toJsonConfig.include, function (include) {
+                    if (jsonConf.include) {
+                        _.forEach(jsonConf.include, function (include) {
                             if (doc[include] !== undefined) {
                                 ret[include] = doc[include];
                             }
                         });
                     }
 
-                    if (doc.toJsonConfig.hide) {
-                        _.forEach(doc.toJsonConfig.hide, function (propertyToHide) {
+                    if (jsonConf.hide) {
+                        _.forEach(jsonConf.hide, function (propertyToHide) {
                             delete ret[propertyToHide];
                         });
                     }
