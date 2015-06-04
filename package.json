@@ -32,7 +32,7 @@
     "moment": "~2.10.x",
     "moment-timezone": "~0.3.x",
     "swagger-node-restify": "git+https://github.com/YouPers/swagger-node-restify.git",
-    "async": "git+ssh://git@github.com:YouPers/async.git",
+    "async": "1.2.x",
     "i18next": "1.9.x",
     "cron": "~1.0.x",
     "gm": "~1.18.x",
