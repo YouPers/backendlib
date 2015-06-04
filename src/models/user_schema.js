@@ -10,29 +10,29 @@ var mongoose = require('mongoose'),
     Profile = mongoose.model('Profile'),
     bcrypt = require('bcrypt');
 
-var    BCRYPT_PREFIX = "bcrypt:";
+var BCRYPT_PREFIX = "bcrypt:";
 /**
  * User Schema
  */
 var UserSchema = common.newSchema({
-    firstname: { type: String, trim: true, required: true },
-    lastname: { type: String, trim: true, required: true },
-    fullname: { type: String, trim: true, required: true },
+    firstname: {type: String, trim: true, required: true},
+    lastname: {type: String, trim: true, required: true},
+    fullname: {type: String, trim: true, required: true},
     accessToken: {type: String, select: false},
     refreshToken: {type: String, select: false},
-    provider: { type: String, select: false},
+    provider: {type: String, select: false},
     providerId: {type: String, select: false},
     emails: [String],
     photos: [String],
-    email: { type: String, trim: true, lowercase: true, required: true, unique: true, select: false},
+    email: {type: String, trim: true, lowercase: true, required: true, unique: true, select: false},
     avatar: {type: String},
-    emailValidatedFlag: { type: Boolean, default: false, select: false },
-    username: { type: String, trim: true, lowercase: true, required: true, unique: true, select:false },
-    lastLogin: { type: Date},
-    lastSummaryMail: { type: Date},
+    emailValidatedFlag: {type: Boolean, default: false, select: false},
+    username: {type: String, trim: true, lowercase: true, required: true, unique: true, select: false},
+    lastLogin: {type: Date},
+    lastSummaryMail: {type: Date},
     roles: {type: [String], select: false},
-    hashed_password: { type: String, trim: true, select: false },
-    tempPasswordFlag: { type: Boolean, default: false, select: false },
+    hashed_password: {type: String, trim: true, select: false},
+    tempPasswordFlag: {type: Boolean, default: false, select: false},
     profile: {type: ObjectId, ref: 'Profile', select: false}
 });
 
@@ -51,10 +51,10 @@ UserSchema.methods = {
      */
     encryptPassword: function (password, cb) {
         if (!password || !this._id) {
-            return cb(null,'');
+            return cb(null, '');
         }
 //        return crypto.createHmac('sha1', this._id.toString()).update(password).digest('hex'); // using the ObjectId as the salt
-        bcrypt.hash(password, 8, function(err, hash) {
+        bcrypt.hash(password, 8, function (err, hash) {
             if (err) {
                 return cb(err);
             }
@@ -69,13 +69,15 @@ UserSchema.methods = {
             return cb(null, crypto.createHmac('sha1', this._id.toString()).update(password).digest('hex') === this.hashed_password);
         }
     },
-    toJsonConfig: {
-        hide: ['hashed_password', 'tempPasswordFlag']
+    toJsonConfig: function () {
+        return {
+            hide: ['hashed_password', 'tempPasswordFlag']
+        };
     },
 
-    getPersonalNotificationQueues: function() {
+    getPersonalNotificationQueues: function () {
         // the personal _id of the user for personal messages
-        var queues =  [this._id];
+        var queues = [this._id];
 
         // add the campaign _id to get Notifications from the camapaign commuinity
         if (this.campaign) {
@@ -106,7 +108,7 @@ UserSchema.virtual('password_old')
     .set(function (password_old) {
         this._password_old = password_old;
     })
-    .get(function() {
+    .get(function () {
         return this._password_old;
     });
 
@@ -133,7 +135,7 @@ UserSchema.pre('save', function (next, req, callback) {
         return next(new error.MissingParameterError({required: 'email'}));
     }
     if (this.email.indexOf('@') <= 0) {
-       return next(new error.MissingParameterError('Email address must be valid'));
+        return next(new error.MissingParameterError('Email address must be valid'));
     }
     return next(req, callback);
 
@@ -146,18 +148,18 @@ UserSchema.pre('save', function (next, req, callback) {
     var self = this;
 
     function saveNewPassword() {
-        self.encryptPassword(self.password, function(err, hash) {
+        self.encryptPassword(self.password, function (err, hash) {
             self.hashed_password = hash;
             return next(req, callback);
         });
     }
 
-    if(!self.hashed_password) {
+    if (!self.hashed_password) {
         // this user does not have a password yet
         return saveNewPassword();
-    } else if(this.password_old) {
+    } else if (this.password_old) {
         // this is a user who wants to change his password, check whether we got a correct old password
-        self.validPassword(self.password_old, function(err, result) {
+        self.validPassword(self.password_old, function (err, result) {
             if (result) {
                 return saveNewPassword();
             } else {
@@ -179,7 +181,7 @@ UserSchema.pre('save', function (next, req, callback) {
 
     if (!this.isNew || this.profile) {
         if (this.campaign && (this.campaign !== this.profile.campaign )) {
-            Profile.update({_id: this.profile._id || this.profile}, {campaign: this.campaign._id || this.campaign}).exec(function(err){
+            Profile.update({_id: this.profile._id || this.profile}, {campaign: this.campaign._id || this.campaign}).exec(function (err) {
                 if (err) {
                     return error.handleError(err, next);
                 }
@@ -193,7 +195,13 @@ UserSchema.pre('save', function (next, req, callback) {
         var newProfileId = mongoose.Types.ObjectId();
         this.profile = newProfileId;
 
-        var newProfile = new Profile( { _id: newProfileId, owner: this.id, timestamp: new Date(), campaign: this.campaign, language: req.locale } );
+        var newProfile = new Profile({
+            _id: newProfileId,
+            owner: this.id,
+            timestamp: new Date(),
+            campaign: this.campaign,
+            language: req.locale
+        });
 
         newProfile.save(function (err) {
             if (err) {
@@ -211,7 +219,7 @@ UserSchema.pre('save', function (next, req, callback) {
 UserSchema.pre('remove', function (next) {
 
 
-    var profile = Profile.find( { owner: this._id } );
+    var profile = Profile.find({owner: this._id});
 
     profile.remove(function (err) {
         if (err) {
