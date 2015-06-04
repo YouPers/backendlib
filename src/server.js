@@ -7,15 +7,18 @@ var restify = require("restify"),
     _ = require('lodash');
 // setup better error stacktraces
 
-if (process.env.NODE_ENV !== 'production'){
-//    require('longjohn');
-//    longjohn.async_trace_limit = 10;  // defaults to 10
-//    longjohn.empty_frame = 'ASYNC CALLBACK';
-}
-
 
 module.exports = {
     createSwaggeredServer: function createSwaggerdServer(name, config) {
+
+        if (config.longjohn === 'enabled'){
+            console.log("LONGJOHN: enabling longjohn stacktraces: make sure this does not run in production");
+            var longjohn = require('longjohn');
+            longjohn.async_trace_limit = 10;  // defaults to 10
+            longjohn.empty_frame = 'ASYNC CALLBACK';
+        }
+
+
         var auth = require('./util/auth').handlers(config);
         var logger = require('./util/log').getLogger(config);
 
