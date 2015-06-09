@@ -408,6 +408,10 @@ function deepPopulate(doc, pathListString, options, callback) {
                     if (err) {
                         return callback(err);
                     }
+                    // set the $locale on the populated docs, so they are displayed in the correct locale
+                    _.each(results, function(obj) {
+                       obj[lastPathBit].$locale = options.locale;
+                    });
                     doNext();
                 });
             } else {
@@ -462,7 +466,7 @@ var sendListCb = function (req, res, next) {
             return next();
         }
         if (req.query && req.query.populatedeep) {
-            deepPopulate(objList, req.query.populatedeep, {}, function (err, result) {
+            deepPopulate(objList, req.query.populatedeep, {locale: req.locale}, function (err, result) {
                 if (err) {
                     return error.handleError(err, next);
                 }
@@ -554,7 +558,7 @@ module.exports = {
                     }
 
                     if (req.query && req.query.populatedeep) {
-                        deepPopulate(obj, req.query.populatedeep, {}, function (err, result) {
+                        deepPopulate(obj, req.query.populatedeep, {locale: req.locale}, function (err, result) {
                             if (err) {
                                 return error.handleError(err, next);
                             }
