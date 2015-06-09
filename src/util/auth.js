@@ -451,7 +451,8 @@ function getAuthHandlers(config) {
 
     function logoutFn(req, res, next) {
         if (!req.params.token && !req.body.token) {
-            return next(new error.MissingParameterError("paramter token required"));
+            res.send(201, {removedDevice: "no Token Sent, no device removed"});
+            return next();
         }
 
         var profile = req.user.profile;
@@ -462,16 +463,17 @@ function getAuthHandlers(config) {
 
         if (deviceToRemove) {
             profile.devices.pull(deviceToRemove);
-        }
-
-        profile.save(function (err, result) {
-            if (err) {
-                return next(err);
-            }
-            res.send(201, {removedDevice: deviceToRemove});
+            profile.save(function (err, result) {
+                if (err) {
+                    return next(err);
+                }
+                res.send(201, {removedDevice: deviceToRemove});
+                return next();
+            });
+        } else {
+            res.send(201, {removedDevice: "device not found, not removed"});
             return next();
-        });
-
+        }
     }
 
     return {

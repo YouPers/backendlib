@@ -144,7 +144,7 @@ module.exports = {
 
 
         function _addRoutes(routesDir, fileExtension) {
-            console.log('Losding Routes from: ' + routesDir);
+            console.log('Loading Routes from: ' + routesDir);
             fs.readdirSync(routesDir).forEach(function (file) {
 
                 if (file.indexOf(fileExtension) !== -1) {
