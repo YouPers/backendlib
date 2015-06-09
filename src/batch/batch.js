@@ -48,7 +48,7 @@ var genericBatch = function genericBatch(feeder, worker, context) {
         var batchResult =  {
             batchName: context.name,
             batchId: context.batchId,
-            instance: process.env.NODE_ENV,
+            instance: process.env.NODE_ENV || 'development',
             started: new Date(),
             foundWorkItems: work.length,
             successCount: 0,
@@ -106,18 +106,26 @@ var genericBatch = function genericBatch(feeder, worker, context) {
                 log.info({batchResult: batchResult}, 'Batch Job: ' + context.name + ":" + context.batchId + ": FINISHED");
             }
 
-            if (context.config &&
-                context.config.batch &&
-                context.config.batch.resultRecipients &&
-                _.isArray(context.config.batch.resultRecipients) &&
-                context.config.batch.resultRecipients.length >0) {
+            var BatchReport =  mongoose.model('BatchReport');
+            var myReport = new BatchReport(batchResult);
+            myReport.save(function(err, saved) {
+                if (err) {
+                    log.error({err: err}, "Error saving the BatchReport");
+                }
+                if (context.config &&
+                    context.config.batch &&
+                    context.config.batch.resultRecipients &&
+                    _.isArray(context.config.batch.resultRecipients) &&
+                    context.config.batch.resultRecipients.length >0) {
 
-                var email = require('../util/email')(context.config);
-                _.forEach(context.config.batch.resultRecipients, function(emailAdress) {
-                    email.sendBatchResultMail(emailAdress, batchResult, context.i18n);
-                });
-            }
-            mongoose.connection.close();
+                    var email = require('../util/email')(context.config);
+                    _.forEach(context.config.batch.resultRecipients, function(emailAdress) {
+                        email.sendBatchResultMail(emailAdress, batchResult, context.i18n);
+                    });
+                }
+                mongoose.connection.close();
+            });
+
         });
 
     };

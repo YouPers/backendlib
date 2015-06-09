@@ -77,7 +77,7 @@ var initialize = function initialize(config, customModels, customModelPath, mode
 
         // load common models
         var commonPath = __dirname + '/models/';
-        var commonModelNames = ['profile', 'user', 'deletejournal'];
+        var commonModelNames = ['profile', 'user', 'deletejournal', 'batchReport'];
 
         _createAndLoadModels(commonPath, commonModelNames);
         _loadModels(customModelPath, customModels);
