@@ -410,7 +410,13 @@ function deepPopulate(doc, pathListString, options, callback) {
                     }
                     // set the $locale on the populated docs, so they are displayed in the correct locale
                     _.each(results, function(obj) {
-                       obj[lastPathBit].$locale = options.locale;
+                        if (_.isArray(obj[lastPathBit])) {
+                            _.each(obj[lastPathBit], function(o) {
+                                o.$locale = options.locale;
+                            });
+                        } else {
+                            obj[lastPathBit].$locale = options.locale;
+                        }
                     });
                     doNext();
                 });
