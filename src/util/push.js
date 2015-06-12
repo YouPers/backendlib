@@ -37,38 +37,97 @@ module.exports = function (config) {
     }
 
     function sendPush(user, data, collapseKey, cb) {
+        // this function takes one of those options as the first parameter
+        // an object or an array of objects of the following types:
 
-        if (
-            (_.isArray(user) && (!user[0].profile || !user[0].profile._id)) ||
-            (!user.profile || !user.profile._id)) {
+        // a) an object Id of a user
+        // b) a partial user object without a profile attribute
+        // c) a full user object with an unpopulated profile
+        // d) a full user object with populated profile
+
+        // we need the full user object and the populated profile
+
+        // we determine the type by looking at the first
+
+        var firstUser = _.isArray(user) ? user[0] : user;
+
+        if (!firstUser) {
+            return cb(new Error('User is required'));
+        } else if (!firstUser._id) {
+            log.debug("sending push for user id only");
+
+            // this is case a)
+            var userIdArray = _.isArray(user) ? user : [user];
+            mongoose.model('User')
+                .find({_id: {$in: userIdArray}})
+                .select('+profile')
+                .populate('profile')
+                .exec(function (err, populatedUsers) {
+                    if (err) {
+                        return cb(err);
+                    }
+                    return _sendPushWithPopulatedProfile(populatedUsers, data, collapseKey, cb);
+
+                });
+        } else if (!firstUser.profile) {
+            log.debug("sending push for user without profile attr");
+            // this is case b)
+            var userArray = _.isArray(user) ? user : [user];
+            var userIds = _.pluck(userArray, '_id');
+            mongoose.model('User')
+                .find({_id: {$in: userIds}})
+                .select('+profile')
+                .populate('profile')
+                .exec(function (err, populatedUsers) {
+                    if (err) {
+                        return cb(err);
+                    }
+                    return _sendPushWithPopulatedProfile(populatedUsers, data, collapseKey, cb);
+                });
+
+        } else if (!firstUser.profile._id) {
+            log.debug("sending push for user with populated profile");
+            // this is case c)
             mongoose.model('Profile').populate(user, {path: 'profile'}, function(err, populatedUser) {
                 if (err) {
                     return cb(err);
                 }
                 return _sendPushWithPopulatedProfile(populatedUser, data, collapseKey, cb);
             });
+
         } else {
+            // this must be case d)
+            log.debug("sending push for user with populated profile");
             return _sendPushWithPopulatedProfile(user, data, collapseKey, cb);
         }
 
+
         function _sendPushWithPopulatedProfile(user, data, collapseKey, cb) {
+
+            user = _.isArray(user) ? user : [user];
+
             // handle the android devices
-            var androidRegistrationIds = user.profile && user.profile.devices ?
-                _.chain(user.profile.devices)
+            var androidRegistrationIds =
+                _.chain(user)
+                    .pluck('profile')
+                    .pluck('devices')
+                    .flatten()
                     .filter(function (dev) {
                         return dev.deviceType === 'android';
                     })
                     .pluck('token')
-                    .value() : undefined;
+                    .value();
 
-            var iosDeviceTokens = user.profile && user.profile.devices ?
-                _.chain(user.profile.devices)
+            var iosDeviceTokens =
+                _.chain(user)
+                    .pluck('profile')
+                    .pluck('devices')
+                    .flatten()
                     .filter(function (dev) {
                         return dev.deviceType === 'ios';
                     })
                     .pluck('token')
-                    .value() : undefined;
-
+                    .value();
 
             function _sendAndroidMessages(androidRegistrationIds, done) {
                 if (androidRegistrationIds && androidRegistrationIds.length > 0) {
