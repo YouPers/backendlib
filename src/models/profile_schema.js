@@ -33,7 +33,9 @@ var ProfileSchema = common.newSchema({
         zipCode: { type: Number },
         city: { type: String, trim: true },
         country: { type: String, enum: enums.country },
-        location:  {type: [Number], index: '2d'}
+        location:  {type: [Number], index: '2d'},
+        googlePlaceId: {type: String},
+        formattedAddress: {type: String}
 },
     workAddress: {
         street: { type: String, trim: true },
@@ -41,7 +43,9 @@ var ProfileSchema = common.newSchema({
         zipCode: { type: Number },
         city: { type: String, trim: true },
         country: { type: String, trim: true },
-        location:  {type: [Number], index: '2d'}
+        location:  {type: [Number], index: '2d'},
+        googlePlaceId: {type: String},
+        formattedAddress: {type: String}
     },
     maritalStatus: { type: String, enum: enums.maritalStatus, default: "undefined" },
     language: { type: String, trim: true},
