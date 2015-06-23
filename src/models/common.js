@@ -68,8 +68,13 @@ module.exports = {
                         // TODO: find a way to deliver a reasonable Fallback in this case, needs adjusting of the querySelector!!!
                         return "";
                     } else {
-                        // many locales loaded, --> so we give him a reasonable default
-                        return myValue[this.$locale || defaultLanguage] || myValue['en'] || myValue[_.keys(myValue)[0]];
+                        // many locales loaded, --> try to find the locale in the $locale variable of this object or recursivly its parent()
+                        // we support 5 levels of embedding
+                        var locale = this.$locale ||
+                            (_.isFunction(this.parent) && this.parent().$locale ||
+                            (_.isFunction(this.parent().parent) && this.parent().parent().locale) ||
+                            (_.isFunction(this.parent().parent().parent) && this.parent().parent().parent().$locale))
+                        return myValue[locale || defaultLanguage] || myValue['en'] || myValue[_.keys(myValue)[0]];
                     }
                 })
                 .set(function (value) {
