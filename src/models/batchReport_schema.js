@@ -17,12 +17,12 @@ var BatchReport = common.newSchema({
     "success": [
         {
             "id": { type: String},
-            "result": { type: String}
+            "result": {}
         }
     ],
     "errored": [{
         "id": { type: String},
-        "result": { type: String}
+        "result": {}
     }],
     "ended": { type: Date, required: true },
     "runTimeTotal": { type: Number},
