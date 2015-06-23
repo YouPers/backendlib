@@ -69,7 +69,7 @@ module.exports = {
                         return "";
                     } else {
                         // many locales loaded, --> try to find the locale in the $locale variable of this object or recursivly its parent()
-                        // we support 5 levels of embedding
+                        // we support 3 levels of embedding
                         var locale = this.$locale ||
                             (_.isFunction(this.parent) && this.parent().$locale ||
                             (_.isFunction(this.parent().parent) && this.parent().parent().$locale) ||
