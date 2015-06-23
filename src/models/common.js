@@ -72,7 +72,7 @@ module.exports = {
                         // we support 5 levels of embedding
                         var locale = this.$locale ||
                             (_.isFunction(this.parent) && this.parent().$locale ||
-                            (_.isFunction(this.parent().parent) && this.parent().parent().locale) ||
+                            (_.isFunction(this.parent().parent) && this.parent().parent().$locale) ||
                             (_.isFunction(this.parent().parent().parent) && this.parent().parent().parent().$locale));
                         return myValue[locale || defaultLanguage] || myValue['en'] || myValue[_.keys(myValue)[0]];
                     }
