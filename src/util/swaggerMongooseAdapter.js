@@ -67,7 +67,7 @@ function getSwaggerModel(aMongooseModel) {
                     targetModel.properties[propertyName] = {type: typeMap[property.name] || property.name || 'ObjectId'};
                 }
                 else {
-                    throw new Error('unknown type for: ' + propertyName + ' propType: ' + property);
+                    targetModel.properties[propertyName] = {type: 'unknown'};
                 }
                 var desc = fieldDescriptions[propertyName] || fieldDescriptions[targetModel.id + '.' + propertyName];
                 if (desc) {
