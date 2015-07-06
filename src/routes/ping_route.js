@@ -49,7 +49,7 @@ module.exports = function (swagger) {
             accessLevel: 'al_all'
         },
         action: function (req, res, next) {
-            mongoose.connection.db.executeDbCommand({'ping':'1'}, function(err, dbres) {
+            mongoose.connection.db.command({'ping':'1'}, function(err, dbres) {
                 if (err === null) {
                     res.send(dbres);
                     return next();
