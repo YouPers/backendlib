@@ -14,7 +14,7 @@ module.exports = {
         if (config.longjohn === 'enabled'){
             console.log("LONGJOHN: enabling longjohn stacktraces: make sure this does not run in production");
             var longjohn = require('longjohn');
-            longjohn.async_trace_limit = 10;  // defaults to 10
+            longjohn.async_trace_limit = 5;  // defaults to 10
             longjohn.empty_frame = 'ASYNC CALLBACK';
         }
 
