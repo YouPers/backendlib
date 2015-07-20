@@ -8,6 +8,7 @@ module.exports = function (config) {
     var NR_OF_RETRIES = config.push.nrOfRetries || 2;
     var androidSender, apnConnection;
     var log = require('./log').getLogger(config);
+    var Notification = mongoose.model('Notification');
 
     if (config.push && config.push.googlePushApiKey) {
         androidSender = new gcm.Sender(config.push.googlePushApiKey);
@@ -106,95 +107,122 @@ module.exports = function (config) {
 
             user = _.isArray(user) ? user : [user];
 
-            // handle the android devices
-            var androidRegistrationIds =
-                _.chain(user)
-                    .pluck('profile')
-                    .pluck('devices')
-                    .flatten()
-                    .filter(function (dev) {
-                        return dev.deviceType === 'android';
-                    })
-                    .pluck('token')
-                    .value();
+            var devices = {
+                android: {},
+                ios: {}
+            };
 
-            var iosDeviceTokens =
-                _.chain(user)
-                    .pluck('profile')
-                    .pluck('devices')
-                    .flatten()
-                    .filter(function (dev) {
-                        return dev.deviceType === 'ios';
-                    })
-                    .pluck('token')
-                    .value();
+            var notificationsToSave = [];
 
-            function _sendAndroidMessages(androidRegistrationIds, done) {
-                if (androidRegistrationIds && androidRegistrationIds.length > 0) {
+
+            _.forEach(user, function(oneuser){
+                _.forEach(oneuser.profile.devices,function(device) {
+                    if (device.deviceType === 'ios') {
+                        devices.ios[device.token] = oneuser;
+                    } else if (device.deviceType === 'android') {
+                        devices.android[device.token] = oneuser;
+                    } else {
+                        return cb(new Error('unkown deviceType: ' + device.deviceType));
+                    }
+                });
+
+
+                var myNotification = {
+                    _id: mongoose.Types.ObjectId(),
+                    "gcmtype": data.type,
+                    "title": data.title,
+                    "description": data.description,
+                    "author": data.author,
+                    "owner": oneuser._id,
+                    "data": _.clone(data)
+                };
+                notificationsToSave.push(myNotification);
+                oneuser.notificationId = myNotification._id;
+            });
+
+            function _sendAndroidMessages(androidDevices, done) {
+                if (_.keys(androidDevices).length === 0) {
+                    return done(null, {result: "no android devices found for this user"});
+                }
+
+                _.forEach(androidDevices, function(user, token) {
+                    var myData = _.clone(data);
+                    myData.notificationId = user.notificationId;
+
                     var message = new gcm.Message({
                         timeToLive: TIME_TO_LIVE,
                         delayWhileIdle: true,
                         collapseKey: collapseKey || 'messages',
-                        data: data
+                        data: myData
                     });
-                    log.trace({data: data, user: user.username || user.email || user.id}, "sending push message");
-                    return androidSender.send(message, androidRegistrationIds, NR_OF_RETRIES, function (err, result) {
+                    log.trace({data: myData, user: user.username || user.email || user.id}, "sending push message");
+                    return androidSender.send(message, token, NR_OF_RETRIES, function (err, result) {
                         if (err) {
                             return cb(err);
                         }
                         log.trace({result: result, user: user.username || user.email || user.id}, "android gcm push message(s) sent");
                         return done(null, result);
                     });
-                } else {
-                    return done(null, {result: "no android devices found for this user"});
-                }
+                });
+
             }
 
-            function _sendIosMessages(iosDeviceTokens, done) {
-                if (iosDeviceTokens && iosDeviceTokens.length > 0) {
+            function _sendIosMessages(iosDevices, done) {
+                if (_.keys(iosDevices).length === 0) {
+                    return done(null, {result: "no ios devices found for this user"});
+                }
+                var result = {
+                    sent: 0,
+                    errored: 0
+                };
+                _.forEach(iosDevices, function(user, token) {
                     var note = new apn.Notification();
 
                     note.expiry = Math.floor(Date.now() / 1000) + TIME_TO_LIVE;
                     note.badge = data.badge || 1;
                     note.alert = data.message;
                     note.payload = data;
-                    var result = {
-                        sent: 0,
-                        errored: 0
-                    };
+                    try {
+                        var myDevice =  new apn.Device(token);
+                        apnConnection.pushNotification(note, myDevice);
+                        result.sent++;
+                    } catch (err) {
+                        log.info({err: err, token: token, user: user.username || user.email || user.id}, "PushNotification: Error while sending ios Push");
+                        result.errored++;
+                    }
 
-                    _.forEach(iosDeviceTokens, function(token) {
-
-                        try {
-                            var myDevice =  new apn.Device(token);
-                            apnConnection.pushNotification(note, myDevice);
-                            result.sent++;
-                        } catch (err) {
-                            log.info({err: err, token: token, user: user.username || user.email || user.id}, "PushNotification: Error while sending ios Push");
-                            result.errored++;
-                        }
-                    });
-                    log.trace({result: result, user: user.username || user.email || user.id}, "ios apple push message(s) sent");
-                    return done(null, result);
-                } else {
-                    return done(null, {result: 'no ios devices found for this user'});
-                }
+                });
+                log.trace({result: result, user: user.username || user.email || user.id}, "ios apple push message(s) sent");
+                return done(null, result);
             }
 
 
-            _sendAndroidMessages(androidRegistrationIds, function(err, androidResult) {
+            _sendAndroidMessages(devices.android, function(err, androidResult) {
                 if (err) {
                     return cb(err);
                 }
                 if (apnConnection) {
-                    _sendIosMessages(iosDeviceTokens, function(err, iosResult) {
+                    _sendIosMessages(devices.ios, function(err, iosResult) {
                         if (err) {
                             return cb(err);
                         }
-                        return cb(null, {android: androidResult, ios: iosResult});
+                        log.debug({notsToSave: notificationsToSave}, "saving notifications");
+                        Notification.create(notificationsToSave, function(err) {
+                            if (err) {
+                                return cb(err);
+                            }
+                            return cb(null, {android: androidResult, ios: iosResult});
+                        });
                     });
                 } else {
-                    return cb(null, {android: androidResult, ios: 'not enabled on server'});
+                    log.debug({notsToSave: notificationsToSave}, "saving notifications");
+                    Notification.create(notificationsToSave, function(err) {
+                        if (err) {
+                            return cb(err);
+                        }
+                        return cb(null, {android: androidResult, ios: 'not enabled on server'});
+                    });
+
                 }
             });
         }
