@@ -1,7 +1,7 @@
 {
   "name": "ypbackendlib",
   "description": "All common components to be reused by multiple YouPers Backend Services",
-  "version": "3.0.0-beta2",
+  "version": "3.0.0",
   "private": true,
   "author": "Reto Blunschi",
   "engines": {
