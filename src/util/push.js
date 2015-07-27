@@ -8,7 +8,6 @@ module.exports = function (config) {
     var NR_OF_RETRIES = config.push.nrOfRetries || 2;
     var androidSender, apnConnection;
     var log = require('./log').getLogger(config);
-    var Notification = mongoose.model('Notification');
 
     if (config.push && config.push.googlePushApiKey) {
         androidSender = new gcm.Sender(config.push.googlePushApiKey);
@@ -207,7 +206,7 @@ module.exports = function (config) {
                             return cb(err);
                         }
                         log.debug({notsToSave: notificationsToSave}, "saving notifications");
-                        Notification.create(notificationsToSave, function(err) {
+                        mongoose.model('Notification').create(notificationsToSave, function(err) {
                             if (err) {
                                 return cb(err);
                             }
@@ -216,7 +215,7 @@ module.exports = function (config) {
                     });
                 } else {
                     log.debug({notsToSave: notificationsToSave}, "saving notifications");
-                    Notification.create(notificationsToSave, function(err) {
+                    mongoose.model('Notification').create(notificationsToSave, function(err) {
                         if (err) {
                             return cb(err);
                         }
