@@ -130,7 +130,7 @@ module.exports = function (config) {
                     _id: mongoose.Types.ObjectId(),
                     "gcmtype": data.type,
                     "title": data.title,
-                    "description": data.description,
+                    "description": data.description || data.message,
                     "author": data.author,
                     "owner": oneuser._id,
                     "data": _.clone(data)
