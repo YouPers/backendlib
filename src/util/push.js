@@ -19,8 +19,10 @@ module.exports = function (config) {
     if (config.push.appleApnCert && config.push.appleApnKey) {
         var options = {
             cert: config.push.appleApnCert,
-            key: config.push.appleApnKey
+            key: config.push.appleApnKey,
+            production: config.push.appleApnIsProduction === 'true'
         };
+        log.debug(options, "node-apn options");
         apnConnection = new apn.Connection(options);
         apnConnection.on('transmissionError', function(err, msg, token, info) {
             console.log(err);
@@ -28,7 +30,7 @@ module.exports = function (config) {
             console.log(apn.Errors);
             console.log(_.findKey(apn.Errors, parseFloat(err)));
 
-            log.error({err: _.findKey(apn.Errors, function(v,k) {return v===parseFloat(err);}) || err, token: token, msg: msg, info: info}, "error upon ios apn push transmission");
+            log.error({err: _.findKey(apn.Errors, function(v,k) {return v===parseFloat(err);}) || err, tokenBuffer: token, msg: msg, info: info}, "error upon ios apn push transmission");
         });
 
         log.info("PushMessaging: ios apple apn ENABLED");
