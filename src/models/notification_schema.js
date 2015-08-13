@@ -15,7 +15,7 @@ var Notification = common.newSchema({
     "gcmtype": {type: String},
     "title": {type: String},
     "description": {type: String},
-    "author": {type: ObjectId, ref: 'User'},
+    "triggeringUser": {type: ObjectId, ref: 'User'},
     "owner": {type: ObjectId, ref: 'User', required: true},
     "data": {}
 });

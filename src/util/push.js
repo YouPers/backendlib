@@ -133,7 +133,7 @@ module.exports = function (config) {
                     "gcmtype": data.type,
                     "title": data.title,
                     "description": data.description || data.message,
-                    "author": data.author,
+                    "triggeringUser": data.triggeringUser,
                     "owner": oneuser._id,
                     "data": _.clone(data)
                 };
@@ -178,11 +178,13 @@ module.exports = function (config) {
                 };
                 _.forEach(iosDevices, function(user, token) {
                     var note = new apn.Notification();
+                    var myData = _.clone(data);
+                    myData.notificationId = user.notificationId;
 
                     note.expiry = Math.floor(Date.now() / 1000) + TIME_TO_LIVE;
                     note.badge = data.badge || 1;
                     note.alert = data.message;
-                    note.payload = data;
+                    note.payload = myData;
                     try {
                         var myDevice =  new apn.Device(token);
                         apnConnection.pushNotification(note, myDevice);
