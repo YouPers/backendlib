@@ -43,7 +43,7 @@ var ProfileSchema = common.newSchema({
         zipCode: { type: Number },
         city: { type: String, trim: true },
         country: { type: String, trim: true },
-        location:  {type: [Number], index: '2d'},
+        location:  {type: [Number]},
         googlePlaceId: {type: String},
         formattedAddress: {type: String}
     },
