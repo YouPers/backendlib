@@ -209,7 +209,7 @@ UserSchema.pre('save', function (next, req, callback) {
             }
         });
         if (!this.avatar) {
-            this.avatar = this.profile.gender === 'male' ? '/assets/img/default_avatar_man.png' : '/assets/img/default_avatar_woman.png';
+            this.avatar = this.profile.gender === 'male' ? 'https://insp-ci.youpers.com/assets/img/default_avatar_man.png' : 'https://insp-ci.youpers.com/assets/img/default_avatar_woman.png';
         }
         return next(callback);
 
