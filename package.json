@@ -14,8 +14,8 @@
     "lib": "./src"
   },
   "dependencies": {
-    "restify": "git+https://github.com/restify/node-restify#3fd9692b84859cd53e44137db7d826541523d632",
-    "mongoose": "4.0.x",
+    "restify": "4.0.x",
+    "mongoose": "4.1.x",
     "mongoose-timestamp": "~0.4.x",
     "mongoose-eventify": "0.0.x",
     "longjohn": "0.2.x",
@@ -33,7 +33,7 @@
     "moment": "~2.10.x",
     "moment-timezone": "~0.4.x",
     "swagger-node-restify": "git+https://github.com/YouPers/swagger-node-restify.git",
-    "async": "1.3.x",
+    "async": "1.4.x",
     "i18next": "1.10.x",
     "cron": "~1.0.x",
     "gm": "~1.18.x",
