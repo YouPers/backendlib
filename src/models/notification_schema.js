@@ -17,7 +17,11 @@ var Notification = common.newSchema({
     "description": {type: String},
     "triggeringUser": {type: ObjectId, ref: 'User'},
     "owner": {type: ObjectId, ref: 'User', required: true},
-    "data": {}
+    "data": {},
+    "expires": {type: Date}
 });
+
+Notification.index({expires: 1}, {expireAfterSeconds: 0});
+
 
 module.exports = Notification;
