@@ -363,24 +363,64 @@ function getAuthHandlers(config) {
         };
     }
 
+    /**
+     *
+     * stores a device with its gcm/apn token on a user's profile
+     * also removes the same device from all other user's profiles, to prevent multiple push deliveries to
+     * the same device in cases where tester do "login with user 1-> uninstall/update without logout -> login with user 2".
+     *
+     * @param req
+     * @param sentDevice
+     * @param cb
+     * @returns {*}
+     * @private
+     */
+    function _storeDevice(req, sentDevice, cb) {
+        var user = req.user;
 
-    function _storeDevice(user, sentDevice, cb) {
-        var devices = user.profile && user.profile.devices;
-        // check if this device is already registered
-        if (_.any(devices, function (storedDevice) {
-                return storedDevice.token === sentDevice.token;
-            })) {
-            // this device is already stored
-            return cb();
-        }
 
-        devices.push(sentDevice);
-        user.profile.save(function (err, savedProfile) {
-            if (err) {
-                return cb(err);
-            }
-            return cb();
-        });
+        // remove the device from all other users.
+        mongoose.model('Profile')
+            .find({
+                devices: {$elemMatch: {token: sentDevice.token}},
+                owner: {$ne: user._id}})
+            .exec(function (err, profiles) {
+                if (err) {
+                    return cb(err);
+                }
+
+                _.forEach(profiles, function(profile) {
+                    req.log.debug({owner: profile.owner, token: sentDevice.token, profile: profile.id}, "removing token from another profile")
+                    var deviceToRemove = _.find(profile.devices, function(device) {return device.token === sentDevice.token;});
+                    profile.devices.pull(deviceToRemove);
+                    profile.save(function (err) {
+                        if (err) {
+                            req.log.error({err: err}, "error saving profile when removing device");
+                        }
+                    });
+                });
+
+                var devices = user.profile && user.profile.devices;
+                // check if this device is already registered
+                if (_.any(devices, function (storedDevice) {
+                        return storedDevice.token === sentDevice.token;
+                    })) {
+                    // this device is already stored
+                    return cb();
+                } else {
+                    devices.push(sentDevice);
+
+
+                    user.profile.save(function (err, savedProfile) {
+                        if (err) {
+                            return cb(err);
+                        }
+                        return cb();
+                    });
+                }
+
+            });
+
     }
 
     function loginAndExchangeTokenRedirect(req, res, next) {
@@ -404,9 +444,9 @@ function getAuthHandlers(config) {
 
         if (device) {
 
-            _storeDevice(req.user, device, function (err) {
+            _storeDevice(req, device, function (err) {
                 if (err) {
-                    req.log.error(err);
+                    req.log.error({err: err, data: err.data}, "error storing the device");
                 }
             });
         }
