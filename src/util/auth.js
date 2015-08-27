@@ -390,7 +390,7 @@ function getAuthHandlers(config) {
                 }
 
                 _.forEach(profiles, function(profile) {
-                    req.log.debug({owner: profile.owner, token: sentDevice.token, profile: profile.id}, "removing token from another profile")
+                    req.log.debug({owner: profile.owner, token: sentDevice.token, profile: profile.id}, "removing token from another profile");
                     var deviceToRemove = _.find(profile.devices, function(device) {return device.token === sentDevice.token;});
                     profile.devices.pull(deviceToRemove);
                     profile.save(function (err) {
