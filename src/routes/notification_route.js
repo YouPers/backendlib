@@ -19,7 +19,7 @@ module.exports = function (swagger, config) {
             params: [
                 swagger.queryParam("gcmtype", "the typ of notification to mark as read, use comma separation for multiple", "{}"),
             ],
-            "nickname": "markNotfications as read",
+            "nickname": "markNotficationsAsRead",
             accessLevel: 'al_user'
         },
         action: function(req, res, next) {
