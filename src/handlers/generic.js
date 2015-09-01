@@ -709,7 +709,10 @@ module.exports = {
                     req.log.error(finder);
                     return next(new error.ResourceNotFoundError());
                 }
-                obj.remove(function (err) {
+                obj.remove(function (err, result) {
+                    if (err) {
+                        return error.handleError(err, next);
+                    }
                     res.send(200);
                     return next();
                 });
