@@ -678,6 +678,9 @@ module.exports = {
             } catch (err) {
                 return next(new error.InvalidArgumentError({id: req.params.id}));
             }
+            if (!objId) {
+                return next(new error.InvalidArgumentError("no id to delete found", {id: req.params.id}));
+            }
             // instead of using Model.remove directly, findOne in combination with obj.remove
             // is used in order to trigger
             // - schema.pre('remove', ... or
@@ -686,7 +689,7 @@ module.exports = {
 
             // check if this is a "personal" object (i.e. has an "owner" property),
             // if yes only delete the objects of the currently logged in user
-            var finder = {_id: req.params.id};
+            var finder = {_id: objId};
 
             if (Model.schema.paths['owner']) {
                 if (!req.user || !req.user.id) {
