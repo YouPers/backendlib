@@ -27,7 +27,8 @@ var getLogger = function (config) {
             port: logConf.logstash.port || 5001,
             max_connect_retries: -1,
             retry_interval: 2000,
-            cbuffer_size: 100
+            cbuffer_size: 100,
+            type: "bunyan"
         });
 
         stream.on('error', function(err) {
