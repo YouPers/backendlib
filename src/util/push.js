@@ -130,12 +130,13 @@ module.exports = function (config) {
 
                 var myNotification = {
                     _id: mongoose.Types.ObjectId(),
-                    "gcmtype": data.type,
-                    "title": data.title,
-                    "description": data.description || data.message,
-                    "triggeringUser": data.triggeringUser,
-                    "owner": oneuser._id,
-                    "data": _.clone(data)
+                    gcmtype: data.type,
+                    title: data.title,
+                    description: data.description || data.message,
+                    triggeringUser: data.triggeringUser,
+                    owner: oneuser._id,
+                    data: _.clone(data),
+                    expires: data.expires
                 };
                 notificationsToSave.push(myNotification);
                 oneuser.notificationId = myNotification._id;
@@ -150,8 +151,9 @@ module.exports = function (config) {
                     var myData = _.clone(data);
                     myData.notificationId = user.notificationId;
 
+                    var ttl = data.expires ? moment(data.expires).subtract(moment()).toDate() / 1000 : TIME_TO_LIVE;
                     var message = new gcm.Message({
-                        timeToLive: TIME_TO_LIVE,
+                        timeToLive: ttl,
                         delayWhileIdle: true,
                         collapseKey: collapseKey || 'messages',
                         data: myData
@@ -181,7 +183,7 @@ module.exports = function (config) {
                     var myData = _.clone(data);
                     myData.notificationId = user.notificationId;
 
-                    note.expiry = Math.floor(Date.now() / 1000) + TIME_TO_LIVE;
+                    note.expiry = data.expires || Math.floor(Date.now() / 1000) + TIME_TO_LIVE;
                     note.badge = data.badge || 1;
                     note.alert = data.message;
                     note.payload = myData;
