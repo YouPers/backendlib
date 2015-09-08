@@ -2,6 +2,7 @@ var gcm = require('node-gcm');
 var apn = require('apn');
 var _ = require('lodash');
 var mongoose = require('mongoose');
+var moment = require('moment-timezone');
 
 module.exports = function (config) {
     var TIME_TO_LIVE = config.push.timeToLive || (60 * 60 * 24 * 4);
