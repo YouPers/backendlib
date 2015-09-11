@@ -1,4 +1,5 @@
 var i18n = require('i18next');
+var _ = require('lodash');
 
 /**
  * translates the way we use to transport the language a user has chosen to the way i18next understands.
@@ -22,8 +23,9 @@ var angularTranslateI18nextAdapterPost = function(req,res,next) {
     return next();
 };
 
-var initialize = function initialize () {
-    i18n.init({
+var initialize = function initialize (opts) {
+
+    var options = _.defaults(opts, {
         fallbackLng: 'de',
         supportedLngs: ['de','en', 'fr', 'it'],
         ns: {
@@ -32,6 +34,7 @@ var initialize = function initialize () {
         resGetPath: 'translations/__ns__.__lng__.json',
         saveMissing: false,
         debug: false});
+    i18n.init(options);
     return i18n;
 };
 
