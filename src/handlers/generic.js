@@ -8,6 +8,26 @@ var error = require('../util/error'),
 ////////////////////////////////////
 // helper functions
 
+function _localeToUse(reqLocale, config) {
+    var supportedLocales = (config && config.i18n && config.i18n.supportedLngs) || ['en', 'de', 'fr', 'it'];
+    var fallbackLanguage = (config && config.i18n && config.i18n.fallbackLng) || 'en';
+    if (!reqLocale || reqLocale.length < 2) {
+        return fallbackLanguage;
+    }
+
+    if (_.contains(supportedLocales, reqLocale)) {
+        return reqLocale;
+    }
+
+    var reqLocaleShort = reqLocale.substring(0, 2);
+    if (_.contains(supportedLocales, reqLocaleShort)) {
+        return reqLocaleShort;
+    }
+
+    return fallbackLanguage;
+}
+
+
 var isF = function (o) {
     for (var i = 1, l = arguments.length; i < l; i++) {
         var v = arguments[i];
@@ -342,13 +362,13 @@ var processDbQueryOptions = function (queryOptions, dbquery, Model, locale) {
     return dbquery;
 };
 
-var processStandardQueryOptions = function (req, dbquery, Model) {
+var processStandardQueryOptions = function (req, dbquery, Model, config) {
     if (req.user && auth.isAdminForModel(req.user, Model) && Model.adminAttrsSelector) {
         dbquery.select(Model.adminAttrsSelector);
     }
 
     if (Model.getI18nPropertySelector) {
-        dbquery.select(Model.getI18nPropertySelector(req.locale || 'de'));
+        dbquery.select(Model.getI18nPropertySelector(_localeToUse(req.locale, config)));
     }
 
     if (req.params.updatesSince) {
@@ -521,7 +541,7 @@ module.exports = {
     addStandardQueryOptions: processStandardQueryOptions,
     processDbQueryOptions: processDbQueryOptions,
 
-    getByIdFn: function (baseUrl, Model, allowNonOwner) {
+    getByIdFn: function (baseUrl, Model, allowNonOwner, config) {
         return function (req, res, next) {
             var objId;
             try {
@@ -532,7 +552,7 @@ module.exports = {
 
             var dbQuery = Model.findById(objId);
 
-            processStandardQueryOptions(req, dbQuery, Model)
+            processStandardQueryOptions(req, dbQuery, Model, config)
                 .exec(function getByIdFnCallback(err, obj) {
                     if (err) {
                         return error.handleError(err, next);
@@ -579,7 +599,7 @@ module.exports = {
         };
     },
 
-    getAllFn: function (baseUrl, Model, fromAllOwners) {
+    getAllFn: function (baseUrl, Model, fromAllOwners, config) {
         return function (req, res, next) {
 
             // check if this is a "personal" object (i.e. has an "owner" property),
@@ -594,7 +614,7 @@ module.exports = {
             }
             var dbQuery = Model.find(finder);
 
-            processStandardQueryOptions(req, dbQuery, Model)
+            processStandardQueryOptions(req, dbQuery, Model, config)
                 .exec(sendListCb(req, res, next));
         };
     },

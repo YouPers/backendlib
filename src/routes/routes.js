@@ -1,7 +1,7 @@
 var _ = require('lodash');
 var generic = require('../handlers/generic');
 
-function addGenericRoutes(swagger, model, baseUrl, options) {
+function addGenericRoutes(swagger, model, baseUrl, options, config) {
     options = options ? options : {};
     _.defaults(options, {
         GET: true,
@@ -43,7 +43,7 @@ function addGenericRoutes(swagger, model, baseUrl, options) {
         op.spec.responseClass = 'Array[' + options.modelName + ']';
         op.spec.params = defaultGetParams;
         op.spec.nickname = 'getAll' + _.capitalize(options.modelName);
-        op.action = generic.getAllFn(baseUrl, model, options.fromAllOwners);
+        op.action = generic.getAllFn(baseUrl, model, options.fromAllOwners, config);
         swagger.addOperation(op);
     }
 
@@ -57,7 +57,7 @@ function addGenericRoutes(swagger, model, baseUrl, options) {
         op.spec.responseClass = _.capitalize(options.modelName);
         op.spec.params = defaultGetParams;
         op.spec.nickname = 'getOne' + _.capitalize(options.modelName);
-        op.action = generic.getByIdFn(baseUrl, model, options.fromAllOwners);
+        op.action = generic.getByIdFn(baseUrl, model, options.fromAllOwners, config);
         swagger.addOperation(op);
     }
 

@@ -15,14 +15,22 @@ module.exports = {
      * @returns {Schema}
      * @param BaseSchema
      */
-    newSchema: function (definition, options, BaseSchema) {
+    newSchema: function (definition, options, BaseSchema, config) {
 
         // we keep track of all i18n strings on this schema
         var multilingualValues = [];
 
-        // TODO: Move to some global config
+        // default config
         var supportedLanguages = ['de', 'en', 'fr', 'it'];
         var defaultLanguage = 'de';
+
+        if (config && config.i18n && config.i18n.fallbackLng) {
+            defaultLanguage = config.i18n.fallbackLng;
+        }
+
+        if (config && config.i18n && config.i18n.supportedLngs) {
+            supportedLanguages = config.i18n.supportedLngs;
+        }
 
         // go through all properties defined for this model
         // for every prop check whether it has the attribute i18n with value true
