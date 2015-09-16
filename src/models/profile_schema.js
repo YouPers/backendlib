@@ -30,7 +30,7 @@ var ProfileSchema = common.newSchema({
     homeAddress: {
         street: { type: String, trim: true },
         houseNumber: { type: String, trim: true },
-        zipCode: { type: Number },
+        zipCode: { type: String },
         city: { type: String, trim: true },
         country: { type: String, enum: enums.country },
         location:  {type: [Number], index: '2d'},
@@ -40,7 +40,7 @@ var ProfileSchema = common.newSchema({
     workAddress: {
         street: { type: String, trim: true },
         houseNumber: { type: String, trim: true },
-        zipCode: { type: Number },
+        zipCode: { type: String },
         city: { type: String, trim: true },
         country: { type: String, trim: true },
         location:  {type: [Number]},
