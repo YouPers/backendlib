@@ -225,7 +225,7 @@ function addOp(str, isString, type) {
     } else if (type === ObjectId) {
         op = '$eq';
         if (!mongoose.Types.ObjectId.isValid(str)) {
-            throw new error.InvalidArgumentError('the value "' +str + '" is not a valid ObjectId. Use a valid ObjectId to filter for this porperty');
+            throw new error.InvalidArgumentError('the value "' + str + '" is not a valid ObjectId. Use a valid ObjectId to filter for this porperty');
         }
         val = new ObjectId(str);
     } else if (isString) {
@@ -317,27 +317,29 @@ var _addFilter = function (queryParams, dbquery, Model) {
                 method = 'where';
         }
 
-        if (type === ObjectId && queryValue[0] !== '*' ) {
+        if (type === ObjectId && queryValue[0] !== '*') {
             var qp = {};
             var multipleValues = queryValue.split(',');
 
             if (multipleValues.length > 1) {
-                qp[ret[2]] = {$in: _.map(multipleValues, function(val) {
-                    if (!mongoose.Types.ObjectId.isValid(val)) {
-                        throw new error.InvalidArgumentError('the value "' +val + '" is not a valid ObjectId. Use a valid ObjectId to filter for this porperty');
-                    }
-                    return mongoose.Types.ObjectId(val);
-                })};
+                qp[ret[2]] = {
+                    $in: _.map(multipleValues, function (val) {
+                        if (!mongoose.Types.ObjectId.isValid(val)) {
+                            throw new error.InvalidArgumentError('the value "' + val + '" is not a valid ObjectId. Use a valid ObjectId to filter for this porperty');
+                        }
+                        return mongoose.Types.ObjectId(val);
+                    })
+                };
             } else {
                 if (queryValue[0] === '!') {
                     var oidString = queryValue.substring(1);
                     if (!mongoose.Types.ObjectId.isValid(oidString)) {
-                        throw new error.InvalidArgumentError('the value "' +oidString + '" is not a valid ObjectId. Use a valid ObjectId to filter for this porperty');
+                        throw new error.InvalidArgumentError('the value "' + oidString + '" is not a valid ObjectId. Use a valid ObjectId to filter for this porperty');
                     }
                     qp[ret[2]] = {$ne: oidString};
                 } else {
                     if (!mongoose.Types.ObjectId.isValid(queryValue)) {
-                        throw new error.InvalidArgumentError('the value "' +queryValue + '" is not a valid ObjectId. Use a valid ObjectId to filter for this porperty');
+                        throw new error.InvalidArgumentError('the value "' + queryValue + '" is not a valid ObjectId. Use a valid ObjectId to filter for this porperty');
                     }
                     qp[ret[2]] = queryValue;
                 }
@@ -429,9 +431,9 @@ function deepPopulate(doc, pathListString, options, callback) {
                         return callback(err);
                     }
                     // set the $locale on the populated docs, so they are displayed in the correct locale
-                    _.each(results, function(obj) {
+                    _.each(results, function (obj) {
                         if (_.isArray(obj[lastPathBit])) {
-                            _.each(obj[lastPathBit], function(o) {
+                            _.each(obj[lastPathBit], function (o) {
                                 o.$locale = options.locale;
                             });
                         } else {
@@ -533,303 +535,292 @@ var writeObjCb = function (req, res, next) {
     };
 };
 
-/////////////////////////////////////
-// the generic route handlers
 
-module.exports = {
+function getByIdFn(baseUrl, Model, allowNonOwner, config) {
+    return function getByIdFn(req, res, next) {
+        var objId;
+        try {
+            objId = new mongoose.Types.ObjectId(req.params.id);
+        } catch (err) {
+            return next(new error.InvalidArgumentError({id: req.params.id}));
+        }
 
-    addStandardQueryOptions: processStandardQueryOptions,
-    processDbQueryOptions: processDbQueryOptions,
+        var dbQuery = Model.findById(objId);
 
-    getByIdFn: function (baseUrl, Model, allowNonOwner, config) {
-        return function (req, res, next) {
-            var objId;
-            try {
-                objId = new mongoose.Types.ObjectId(req.params.id);
-            } catch (err) {
-                return next(new error.InvalidArgumentError({id: req.params.id}));
-            }
-
-            var dbQuery = Model.findById(objId);
-
-            processStandardQueryOptions(req, dbQuery, Model, config)
-                .exec(function getByIdFnCallback(err, obj) {
-                    if (err) {
-                        return error.handleError(err, next);
-                    }
-                    if (!obj) {
-                        return next(new error.ResourceNotFoundError());
-                    }
-                    var isOwnedObj = Model.schema.paths['owner'];
-
-                    var isOwner = false;
-                    //check if the object has an owner and whether the current user owns the object
-                    if (obj.owner) {
-                        var ownerId = obj.owner._id || obj.owner;
-                        if (ownerId.equals(req.user._id)) {
-                            isOwner = true;
-                        }
-                    }
-
-                    var isJoiner = false;
-                    // check if this is a obj that can be joined and whether the current user is joiner
-                    if (obj.joiningUsers) {
-                        isJoiner = _.find(obj.joiningUsers, function (joiningUser) {
-                            return (joiningUser._id || joiningUser).equals(req.user._id);
-                        });
-                    }
-
-                    if (isOwnedObj && !isOwner && !isJoiner && !allowNonOwner) {
-                        return next(new error.NotAuthorizedError('Authenticated User does not own this object'));
-                    }
-
-                    if (req.query && req.query.populatedeep) {
-                        deepPopulate(obj, req.query.populatedeep, {locale: req.locale}, function (err, result) {
-                            if (err) {
-                                return error.handleError(err, next);
-                            }
-                            res.send(result);
-                            return next();
-                        });
-                    } else {
-                        res.send(obj);
-                        return next();
-                    }
-                });
-        };
-    },
-
-    getAllFn: function (baseUrl, Model, fromAllOwners, config) {
-        return function (req, res, next) {
-
-            // check if this is a "personal" object (i.e. has an "owner" property),
-            // if yes only send the objects of the currently logged in user
-            var finder = {};
-            if (!fromAllOwners && Model.schema.paths['owner']) {
-                if (!req.user || !req.user.id) {
-                    return next(new error.NotAuthorizedError('Authentication required for this object'));
-                } else {
-                    finder = {owner: req.user.id};
-                }
-            }
-            var dbQuery = Model.find(finder);
-
-            processStandardQueryOptions(req, dbQuery, Model, config)
-                .exec(sendListCb(req, res, next));
-        };
-    },
-
-    /**
-     * postFn
-     * @param baseUrl
-     * @param Model
-     * @param postSaveCb(cb, user)
-     * @returns {Function}
-     */
-
-    postFn: function genericPostFn(baseUrl, Model, postSaveCb) {
-        return function (req, res, next) {
-
-            var err = handlerUtils.checkWritingPreCond(req.body, req.user, Model);
-
-            if (err) {
-                return error.handleError(err, next);
-            }
-
-            // if this Model has a campaign Attribute and the user is currently part of a campaign,
-            // we set the campaign on this object --> by default new objects are part of a campaign
-            if (req.user && req.user.campaign && Model.schema.paths['campaign']) {
-                req.body.campaign = req.user.campaign.id || req.user.campaign; // handle populated and unpopulated case
-            }
-
-            // split the initializing of the model from the setting of the values, so we can set the locale
-            // inbetween.
-            var newObj = new Model();
-            // setting the locale on the Document, so we can get to it in virtuals (for i18n)
-            newObj.$locale = req.locale;
-            newObj.set(req.body);
-
-            var cb = writeObjCb(req, res, next);
-            newObj.save(postSaveCb ? postSaveCb(cb, req.user) : cb);
-        };
-    },
-
-    deleteAllFn: function (baseUrl, Model) {
-        return function (req, res, next) {
-            // instead of using Model.remove directly, findOne in combination with obj.remove
-            // is used in order to trigger
-            // - schema.pre('remove', ... or
-            // - schema.pre('remove', ...
-            // see user_model.js for an example
-
-
-            // check if this is a "personal" object (i.e. has an "owner" property),
-            // if yes only delete the objects of the currently logged in user
-            var finder = '';
-            if (Model.schema.paths['owner']) {
-                if (!req.user || !req.user.id) {
-                    return next(new error.NotAuthorizedError('Authentication required for this object'));
-                } else if (!auth.checkAccess(req.user, 'al_systemadmin')) {
-                    finder = {owner: req.user.id};
-                } else {
-                    // user is systemadmin, he may delete all
-                }
-            }
-            var dbQuery = Model.find(finder);
-
-            dbQuery.exec(function (err, objects) {
-                if (err) {
-                    return error.handleError(err, next);
-                }
-                _.forEach(objects, function (obj) {
-                    obj.remove();
-                });
-                res.send(200);
-                next();
-            });
-        };
-    },
-
-    deleteByIdFn: function (baseUrl, Model) {
-        return function (req, res, next) {
-            var objId;
-            try {
-                objId = new mongoose.Types.ObjectId(req.params.id);
-            } catch (err) {
-                return next(new error.InvalidArgumentError({id: req.params.id}));
-            }
-            if (!objId) {
-                return next(new error.InvalidArgumentError("no id to delete found", {id: req.params.id}));
-            }
-            // instead of using Model.remove directly, findOne in combination with obj.remove
-            // is used in order to trigger
-            // - schema.pre('remove', ... or
-            // - schema.pre('remove', ...
-            // see user_model.js for an example
-
-            // check if this is a "personal" object (i.e. has an "owner" property),
-            // if yes only delete the objects of the currently logged in user
-            var finder = {_id: objId};
-
-            if (Model.schema.paths['owner']) {
-                if (!req.user || !req.user.id) {
-                    return next(new error.NotAuthorizedError('Authentication required for this object'));
-                } else if (!auth.checkAccess(req.user, 'al_systemadmin')) {
-                    finder.owner = req.user.id;
-                } else {
-                    // user is systemadmin, he may delete all
-                }
-            }
-
-            Model.findOne(finder).exec(function (err, obj) {
+        processStandardQueryOptions(req, dbQuery, Model, config)
+            .exec(function getByIdFnCallback(err, obj) {
                 if (err) {
                     return error.handleError(err, next);
                 }
                 if (!obj) {
-                    req.log.error(finder);
                     return next(new error.ResourceNotFoundError());
                 }
-                obj.remove(function (err, result) {
-                    if (err) {
-                        return error.handleError(err, next);
+                var isOwnedObj = Model.schema.paths['owner'];
+
+                var isOwner = false;
+                //check if the object has an owner and whether the current user owns the object
+                if (obj.owner) {
+                    var ownerId = obj.owner._id || obj.owner;
+                    if (ownerId.equals(req.user._id)) {
+                        isOwner = true;
                     }
-                    res.send(200);
+                }
+
+                var isJoiner = false;
+                // check if this is a obj that can be joined and whether the current user is joiner
+                if (obj.joiningUsers) {
+                    isJoiner = _.find(obj.joiningUsers, function (joiningUser) {
+                        return (joiningUser._id || joiningUser).equals(req.user._id);
+                    });
+                }
+
+                if (isOwnedObj && !isOwner && !isJoiner && !allowNonOwner) {
+                    return next(new error.NotAuthorizedError('Authenticated User does not own this object'));
+                }
+
+                if (req.query && req.query.populatedeep) {
+                    deepPopulate(obj, req.query.populatedeep, {locale: req.locale}, function (err, result) {
+                        if (err) {
+                            return error.handleError(err, next);
+                        }
+                        res.send(result);
+                        return next();
+                    });
+                } else {
+                    res.send(obj);
                     return next();
-                });
-
+                }
             });
-        };
-    },
+    };
+}
 
-    putFn: function (baseUrl, Model) {
-        return function (req, res, next) {
-            var err = handlerUtils.checkWritingPreCond(req.body, req.user, Model);
+function getAllFn(baseUrl, Model, fromAllOwners, config) {
+    return function getAll(req, res, next) {
+
+        // check if this is a "personal" object (i.e. has an "owner" property),
+        // if yes only send the objects of the currently logged in user
+        var finder = {};
+        if (!fromAllOwners && Model.schema.paths['owner']) {
+            if (!req.user || !req.user.id) {
+                return next(new error.NotAuthorizedError('Authentication required for this object'));
+            } else {
+                finder = {owner: req.user.id};
+            }
+        }
+        var dbQuery = Model.find(finder);
+
+        processStandardQueryOptions(req, dbQuery, Model, config)
+            .exec(sendListCb(req, res, next));
+    };
+}
+
+
+function postFn(baseUrl, Model, postSaveCb) {
+    return function post(req, res, next) {
+
+        var err = handlerUtils.checkWritingPreCond(req.body, req.user, Model);
+
+        if (err) {
+            return error.handleError(err, next);
+        }
+
+        // if this Model has a campaign Attribute and the user is currently part of a campaign,
+        // we set the campaign on this object --> by default new objects are part of a campaign
+        if (req.user && req.user.campaign && Model.schema.paths['campaign']) {
+            req.body.campaign = req.user.campaign.id || req.user.campaign; // handle populated and unpopulated case
+        }
+
+        // split the initializing of the model from the setting of the values, so we can set the locale
+        // inbetween.
+        var newObj = new Model();
+        // setting the locale on the Document, so we can get to it in virtuals (for i18n)
+        newObj.$locale = req.locale;
+        newObj.set(req.body);
+
+        var cb = writeObjCb(req, res, next);
+        newObj.save(postSaveCb ? postSaveCb(cb, req.user) : cb);
+    };
+}
+
+
+function deleteAllFn(baseUrl, Model) {
+    return function deleteAll(req, res, next) {
+        // instead of using Model.remove directly, findOne in combination with obj.remove
+        // is used in order to trigger
+        // - schema.pre('remove', ... or
+        // - schema.pre('remove', ...
+        // see user_model.js for an example
+
+
+        // check if this is a "personal" object (i.e. has an "owner" property),
+        // if yes only delete the objects of the currently logged in user
+        var finder = '';
+        if (Model.schema.paths['owner']) {
+            if (!req.user || !req.user.id) {
+                return next(new error.NotAuthorizedError('Authentication required for this object'));
+            } else if (!auth.checkAccess(req.user, 'al_systemadmin')) {
+                finder = {owner: req.user.id};
+            } else {
+                // user is systemadmin, he may delete all
+            }
+        }
+        var dbQuery = Model.find(finder);
+
+        dbQuery.exec(function (err, objects) {
             if (err) {
                 return error.handleError(err, next);
             }
-            var objId;
-            try {
-                objId = new mongoose.Types.ObjectId(req.params.id);
-            } catch (err) {
-                return next(new error.InvalidArgumentError({id: req.params.id}));
-            }
-            var sentObj = req.body;
+            _.forEach(objects, function (obj) {
+                obj.remove();
+            });
+            res.send(200);
+            next();
+        });
+    };
+}
 
-            // check whether this is an update for roles and check required privileges
-            if (sentObj.roles) {
-                if (!auth.canAssign(req.user, sentObj.roles)) {
-                    return next(new error.NotAuthorizedError('authenticated user has not enough privileges to assign the specified roles', {
-                        roles: sentObj.roles
-                    }));
-                }
-            }
+function deleteByIdFn(baseUrl, Model) {
+    return function deleteById(req, res, next) {
+        var objId;
+        try {
+            objId = new mongoose.Types.ObjectId(req.params.id);
+        } catch (err) {
+            return next(new error.InvalidArgumentError({id: req.params.id}));
+        }
+        if (!objId) {
+            return next(new error.InvalidArgumentError("no id to delete found", {id: req.params.id}));
+        }
+        // instead of using Model.remove directly, findOne in combination with obj.remove
+        // is used in order to trigger
+        // - schema.pre('remove', ... or
+        // - schema.pre('remove', ...
+        // see user_model.js for an example
 
-            var q = Model.findById(objId);
+        // check if this is a "personal" object (i.e. has an "owner" property),
+        // if yes only delete the objects of the currently logged in user
+        var finder = {_id: objId};
 
-            // if this Model has privateProperties, include them in the select, so we get the whole object
-            // because we need to save it later!
-            if (Model.privatePropertiesSelector) {
-                q.select(Model.privatePropertiesSelector);
+        if (Model.schema.paths['owner']) {
+            if (!req.user || !req.user.id) {
+                return next(new error.NotAuthorizedError('Authentication required for this object'));
+            } else if (!auth.checkAccess(req.user, 'al_systemadmin')) {
+                finder.owner = req.user.id;
+            } else {
+                // user is systemadmin, he may delete all
             }
-            if (Model.adminAttrsSelector) {
-                q.select(Model.adminAttrsSelector);
+        }
+
+        Model.findOne(finder).exec(function (err, obj) {
+            if (err) {
+                return error.handleError(err, next);
             }
-            q.exec(function (err, objFromDb) {
+            if (!obj) {
+                req.log.error(finder);
+                return next(new error.ResourceNotFoundError());
+            }
+            obj.remove(function (err, result) {
                 if (err) {
                     return error.handleError(err, next);
                 }
-                if (!objFromDb) {
-                    return next(new error.ResourceNotFoundError('no object found with the specified id', {
-                        id: req.params.id
+                res.send(200);
+                return next();
+            });
+
+        });
+    };
+}
+
+
+function putFn(baseUrl, Model) {
+    return function put(req, res, next) {
+        var err = handlerUtils.checkWritingPreCond(req.body, req.user, Model);
+        if (err) {
+            return error.handleError(err, next);
+        }
+        var objId;
+        try {
+            objId = new mongoose.Types.ObjectId(req.params.id);
+        } catch (err) {
+            return next(new error.InvalidArgumentError({id: req.params.id}));
+        }
+        var sentObj = req.body;
+
+        // check whether this is an update for roles and check required privileges
+        if (sentObj.roles) {
+            if (!auth.canAssign(req.user, sentObj.roles)) {
+                return next(new error.NotAuthorizedError('authenticated user has not enough privileges to assign the specified roles', {
+                    roles: sentObj.roles
+                }));
+            }
+        }
+
+        var q = Model.findById(objId);
+
+        // if this Model has privateProperties, include them in the select, so we get the whole object
+        // because we need to save it later!
+        if (Model.privatePropertiesSelector) {
+            q.select(Model.privatePropertiesSelector);
+        }
+        if (Model.adminAttrsSelector) {
+            q.select(Model.adminAttrsSelector);
+        }
+        q.exec(function (err, objFromDb) {
+            if (err) {
+                return error.handleError(err, next);
+            }
+            if (!objFromDb) {
+                return next(new error.ResourceNotFoundError('no object found with the specified id', {
+                    id: req.params.id
+                }));
+            }
+
+
+            if (Model.modelName === 'User' && req.user && req.user.id !== objFromDb.id) {
+                if (!auth.checkAccess(req.user, 'al_productadmin')) {
+                    return next(new error.NotAuthorizedError('Not authorized to change this user'));
+                } else if (sentObj.password) {
+                    objFromDb.hashed_password = undefined;
+                }
+            }
+
+            // if this is an "owned" object
+            if (objFromDb.owner) {
+
+                // only the authenticated same owner is allowed to edit
+                if (!objFromDb.owner.equals(req.user.id)) {
+                    return next(new error.NotAuthorizedError('authenticated user is not authorized ' +
+                        'to update this ressource because he is not owner of the stored ressource', {
+                        user: req.user.id,
+                        owner: objFromDb.owner
                     }));
                 }
 
-
-                if (Model.modelName === 'User' && req.user && req.user.id !== objFromDb.id) {
-                    if (!auth.checkAccess(req.user, 'al_productadmin')) {
-                        return next(new error.NotAuthorizedError('Not authorized to change this user'));
-                    } else if (sentObj.password) {
-                        objFromDb.hashed_password = undefined;
-                    }
-                }
-
-                // if this is an "owned" object
-                if (objFromDb.owner) {
-
-                    // only the authenticated same owner is allowed to edit
-                    if (!objFromDb.owner.equals(req.user.id)) {
+                // he is not allowed to change the owner of the object
+                if (sentObj.owner) {
+                    if (!objFromDb.owner.equals(sentObj.owner)) {
                         return next(new error.NotAuthorizedError('authenticated user is not authorized ' +
-                        'to update this ressource because he is not owner of the stored ressource', {
-                            user: req.user.id,
-                            owner: objFromDb.owner
+                            'to change the owner of this object', {
+                            currentOwner: objFromDb.owner,
+                            requestedOwner: sentObj.owner
                         }));
                     }
-
-                    // he is not allowed to change the owner of the object
-                    if (sentObj.owner) {
-                        if (!objFromDb.owner.equals(sentObj.owner)) {
-                            return next(new error.NotAuthorizedError('authenticated user is not authorized ' +
-                            'to change the owner of this object', {
-                                currentOwner: objFromDb.owner,
-                                requestedOwner: sentObj.owner
-                            }));
-                        }
-                    }
                 }
+            }
 
-                // setting the locale on the Document, so we can get to it in virtuals (for i18n)
-                objFromDb.$locale = req.locale;
+            // setting the locale on the Document, so we can get to it in virtuals (for i18n)
+            objFromDb.$locale = req.locale;
 
-                objFromDb.set(sentObj);
-                objFromDb.save(writeObjCb(req, res, next));
-            });
+            objFromDb.set(sentObj);
+            objFromDb.save(writeObjCb(req, res, next));
+        });
 
-        };
-    },
+    };
+}
 
-    sendListCb: sendListCb,
+/////////////////////////////////////
+// the generic route handlers
 
-    writeObjCb: writeObjCb,
+module.exports = {
 
     params: {
         filter: {
@@ -890,5 +881,19 @@ module.exports = {
             "allowMultiple": false,
             "paramType": "query"
         }
-    }
+    },
+
+    addStandardQueryOptions: processStandardQueryOptions,
+    processDbQueryOptions: processDbQueryOptions,
+
+    getByIdFn: getByIdFn,
+    getAllFn: getAllFn,
+    postFn: postFn,
+    putFn: putFn,
+    deleteAllFn: deleteAllFn,
+    deleteByIdFn: deleteByIdFn,
+
+
+    sendListCb: sendListCb,
+    writeObjCb: writeObjCb
 };
