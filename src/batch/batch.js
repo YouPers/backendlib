@@ -1,6 +1,6 @@
 var mongoose = require('mongoose'),
     async = require('async'),
-    i18n = require('../util/ypi18n').initialize(),
+    i18n = require('../util/ypi18n')().initialize(),
     _ = require('lodash'),
     shortid = require('shortid');
 

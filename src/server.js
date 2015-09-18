@@ -2,7 +2,6 @@ var restify = require("restify"),
     fs = require("fs"),
     passport = require('passport'),
     swagger = require("swagger-node-restify"),
-    ypi18n = require('./util/ypi18n'),
     error = require('./util/error'),
     _ = require('lodash');
 // setup better error stacktraces
@@ -21,6 +20,8 @@ module.exports = {
 
         var auth = require('./util/auth').handlers(config);
         var logger = require('./util/log').getLogger(config);
+        var ypi18n = require('./util/ypi18n')(config);
+
 
         var server = restify.createServer({
             name: name,
