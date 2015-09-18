@@ -152,7 +152,7 @@ module.exports = function (config) {
                     var myData = _.clone(data);
                     myData.notificationId = user.notificationId;
 
-                    var ttl = data.expires ? moment(data.expires).subtract(moment()).toDate() / 1000 : TIME_TO_LIVE;
+                    var ttl = data.expires ? moment(data.expires).diff(moment(), 'seconds') : TIME_TO_LIVE;
                     var message = new gcm.Message({
                         timeToLive: ttl,
                         delayWhileIdle: true,
