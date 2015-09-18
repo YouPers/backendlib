@@ -3,29 +3,11 @@ var error = require('../util/error'),
     mongoose = require('mongoose'),
     ObjectId = mongoose.Schema.ObjectId,
     handlerUtils = require('./handlerUtils'),
-    auth = require('../util/auth');
+    auth = require('../util/auth'),
+    ypi18n = require('../util/ypi18n')();
 
 ////////////////////////////////////
 // helper functions
-
-function _localeToUse(reqLocale, config) {
-    var supportedLocales = (config && config.i18n && config.i18n.supportedLngs) || ['en', 'de', 'fr', 'it'];
-    var fallbackLanguage = (config && config.i18n && config.i18n.fallbackLng) || 'en';
-    if (!reqLocale || reqLocale.length < 2) {
-        return fallbackLanguage;
-    }
-
-    if (_.contains(supportedLocales, reqLocale)) {
-        return reqLocale;
-    }
-
-    var reqLocaleShort = reqLocale.substring(0, 2);
-    if (_.contains(supportedLocales, reqLocaleShort)) {
-        return reqLocaleShort;
-    }
-
-    return fallbackLanguage;
-}
 
 
 var isF = function (o) {
@@ -364,13 +346,9 @@ var processDbQueryOptions = function (queryOptions, dbquery, Model, locale) {
     return dbquery;
 };
 
-var processStandardQueryOptions = function (req, dbquery, Model, config) {
+var processStandardQueryOptions = function (req, dbquery, Model) {
     if (req.user && auth.isAdminForModel(req.user, Model) && Model.adminAttrsSelector) {
         dbquery.select(Model.adminAttrsSelector);
-    }
-
-    if (Model.getI18nPropertySelector) {
-        dbquery.select(Model.getI18nPropertySelector(_localeToUse(req.locale, config)));
     }
 
     if (req.params.updatesSince) {
@@ -493,6 +471,12 @@ var sendListCb = function (req, res, next) {
             res.send([]);
             return next();
         }
+
+        // setting the locale on the Documents, so we can get to it in virtuals (for i18n)
+        _.forEach(objList, function (obj) {
+            obj.$locale = req.locale;
+        });
+
         if (req.query && req.query.populatedeep) {
             deepPopulate(objList, req.query.populatedeep, {locale: req.locale}, function (err, result) {
                 if (err) {
@@ -525,6 +509,9 @@ var writeObjCb = function (req, res, next) {
         if (err) {
             return error.handleError(err, next);
         }
+        // setting the locale on the Document, so we can get to it in virtuals (for i18n)
+        savedObject.$locale = req.locale;
+
         var responseCode = 200;
         if (req.method === 'POST') {
             res.header('Location', req.url + '/' + savedObject._id);
@@ -536,7 +523,7 @@ var writeObjCb = function (req, res, next) {
 };
 
 
-function getByIdFn(baseUrl, Model, allowNonOwner, config) {
+function getByIdFn(baseUrl, Model, allowNonOwner) {
     return function getByIdFn(req, res, next) {
         var objId;
         try {
@@ -547,7 +534,7 @@ function getByIdFn(baseUrl, Model, allowNonOwner, config) {
 
         var dbQuery = Model.findById(objId);
 
-        processStandardQueryOptions(req, dbQuery, Model, config)
+        processStandardQueryOptions(req, dbQuery, Model)
             .exec(function getByIdFnCallback(err, obj) {
                 if (err) {
                     return error.handleError(err, next);
@@ -594,7 +581,7 @@ function getByIdFn(baseUrl, Model, allowNonOwner, config) {
     };
 }
 
-function getAllFn(baseUrl, Model, fromAllOwners, config) {
+function getAllFn(baseUrl, Model, fromAllOwners) {
     return function getAll(req, res, next) {
 
         // check if this is a "personal" object (i.e. has an "owner" property),
@@ -609,7 +596,7 @@ function getAllFn(baseUrl, Model, fromAllOwners, config) {
         }
         var dbQuery = Model.find(finder);
 
-        processStandardQueryOptions(req, dbQuery, Model, config)
+        processStandardQueryOptions(req, dbQuery, Model)
             .exec(sendListCb(req, res, next));
     };
 }
