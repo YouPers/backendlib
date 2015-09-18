@@ -184,7 +184,7 @@ module.exports = function (config) {
                     var myData = _.clone(data);
                     myData.notificationId = user.notificationId;
 
-                    note.expiry = data.expires || Math.floor(Date.now() / 1000) + TIME_TO_LIVE;
+                    note.expiry = data.expires/1000 || (Math.floor(Date.now() / 1000) + TIME_TO_LIVE);
                     note.badge = data.badge || 1;
                     note.alert = data.message;
                     note.payload = myData;
