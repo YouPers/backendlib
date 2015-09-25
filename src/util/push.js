@@ -3,8 +3,11 @@ var apn = require('apn');
 var _ = require('lodash');
 var mongoose = require('mongoose');
 var moment = require('moment-timezone');
+var async = require('async');
 
 module.exports = function (config) {
+    var i18n = require('../util/ypi18n')(config).initialize();
+
     var TIME_TO_LIVE = config.push.timeToLive || (60 * 60 * 24 * 4);
     var NR_OF_RETRIES = config.push.nrOfRetries || 2;
     var androidSender, apnConnection;
@@ -39,7 +42,28 @@ module.exports = function (config) {
         log.info("PushMessaging: ios apple apn messaging NOT enabled in config");
     }
 
-    function sendPush(user, data, collapseKey, cb) {
+
+    function _personalizeData(data, user, translationData, cb) {
+        var locale = _.get(user, 'profile.language') || _.get(config, 'i18n.fallbackLng', 'en');
+        log.trace({user: user, locale: locale}, "using this locale");
+
+        translationData = translationData || {};
+        translationData.user = user.toJSON();
+
+        i18n.setLng(locale, function(err, t) {
+            var myData = _.clone(data);
+
+            _.forEach(myData, function(value, key) {
+                if (key.startsWith('i18n')) {
+                    delete myData[key];
+                    myData[_.camelCase(key.substring(4))] = i18n.t(value, translationData);
+                }
+            });
+            cb(null, myData);
+        });
+    }
+
+    function sendPush(user, data, collapseKey, translationData, cb) {
         // this function takes one of those options as the first parameter
         // an object or an array of objects of the following types:
 
@@ -51,6 +75,12 @@ module.exports = function (config) {
         // we need the full user object and the populated profile
 
         // we determine the type by looking at the first
+
+
+        if (_.isUndefined(cb)) {
+            cb = translationData;
+            translationData = undefined;
+        }
 
         var firstUser = _.isArray(user) ? user[0] : user;
 
@@ -69,7 +99,7 @@ module.exports = function (config) {
                     if (err) {
                         return cb(err);
                     }
-                    return _sendPushWithPopulatedProfile(populatedUsers, data, collapseKey, cb);
+                    return _sendPushWithPopulatedProfile(populatedUsers, data, collapseKey, translationData, cb);
 
                 });
         } else if (!firstUser.profile) {
@@ -85,7 +115,7 @@ module.exports = function (config) {
                     if (err) {
                         return cb(err);
                     }
-                    return _sendPushWithPopulatedProfile(populatedUsers, data, collapseKey, cb);
+                    return _sendPushWithPopulatedProfile(populatedUsers, data, collapseKey, translationData, cb);
                 });
 
         } else if (!firstUser.profile._id) {
@@ -95,17 +125,17 @@ module.exports = function (config) {
                 if (err) {
                     return cb(err);
                 }
-                return _sendPushWithPopulatedProfile(populatedUser, data, collapseKey, cb);
+                return _sendPushWithPopulatedProfile(populatedUser, data, collapseKey, translationData, cb);
             });
 
         } else {
             // this must be case d)
             log.debug("sending push for user with populated profile");
-            return _sendPushWithPopulatedProfile(user, data, collapseKey, cb);
+            return _sendPushWithPopulatedProfile(user, data, collapseKey, translationData, cb);
         }
 
 
-        function _sendPushWithPopulatedProfile(user, data, collapseKey, cb) {
+        function _sendPushWithPopulatedProfile(user, data, collapseKey, translationData, cb) {
 
             user = _.isArray(user) ? user : [user];
 
@@ -117,7 +147,7 @@ module.exports = function (config) {
             var notificationsToSave = [];
 
 
-            _.forEach(user, function(oneuser){
+            async.forEach(user, function(oneuser, done){
                 _.forEach(oneuser.profile.devices,function(device) {
                     if (device.deviceType === 'ios') {
                         devices.ios[device.token] = oneuser;
@@ -128,19 +158,33 @@ module.exports = function (config) {
                     }
                 });
 
+                _personalizeData(data, oneuser, translationData, function(err, myData) {
+                    if (err) {
+                        return done(err);
+                    }
+                    oneuser.myData = myData;
+                    log.trace({user: oneuser.username, locale: oneuser.profile.language, myData: myData}, "personalized Data for this user");
 
-                var myNotification = {
-                    _id: mongoose.Types.ObjectId(),
-                    gcmtype: data.type,
-                    title: data.title,
-                    description: data.description || data.message,
-                    triggeringUser: data.triggeringUser,
-                    owner: oneuser._id,
-                    data: _.clone(data),
-                    expires: data.expires
-                };
-                notificationsToSave.push(myNotification);
-                oneuser.notificationId = myNotification._id;
+                    var myNotification = {
+                        _id: mongoose.Types.ObjectId(),
+                        gcmtype: myData.type,
+                        title: myData.title,
+                        description: myData.description || myData.message,
+                        triggeringUser: myData.triggeringUser,
+                        owner: oneuser._id,
+                        data: myData,
+                        expires: myData.expires
+                    };
+                    notificationsToSave.push(myNotification);
+                    oneuser.notificationId = myNotification._id;
+                    return done();
+                });
+            }, function(err) {
+                if (err) {
+                    return cb(err);
+                }
+                _sendAndroidMessages(devices.android, _finalCb);
+
             });
 
             function _sendAndroidMessages(androidDevices, done) {
@@ -148,8 +192,8 @@ module.exports = function (config) {
                     return done(null, {result: "no android devices found for this user"});
                 }
 
-                _.forEach(androidDevices, function(user, token) {
-                    var myData = _.clone(data);
+                async.forEach(androidDevices, function(user, token) {
+                    var myData = user.myData;
                     myData.notificationId = user.notificationId;
 
                     var ttl = data.expires ? moment(data.expires).diff(moment(), 'seconds') : TIME_TO_LIVE;
@@ -181,7 +225,7 @@ module.exports = function (config) {
                 };
                 _.forEach(iosDevices, function(user, token) {
                     var note = new apn.Notification();
-                    var myData = _.clone(data);
+                    var myData = user.myData;
                     myData.notificationId = user.notificationId;
 
                     note.expiry = (data.expires && Math.floor(data.expires/1000)) || (Math.floor(Date.now() / 1000) + TIME_TO_LIVE);
@@ -202,8 +246,7 @@ module.exports = function (config) {
                 return done(null, result);
             }
 
-
-            _sendAndroidMessages(devices.android, function(err, androidResult) {
+            function _finalCb(err, androidResult) {
                 if (err) {
                     return cb(err);
                 }
@@ -230,7 +273,7 @@ module.exports = function (config) {
                     });
 
                 }
-            });
+            }
         }
 
     }
