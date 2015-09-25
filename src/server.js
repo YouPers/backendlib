@@ -91,7 +91,14 @@ module.exports = {
                     req.log.info({req: req, err: err, res: res, reqbody: req.body, resbody: res.body}, res.statusCode + ': ' +  err.name + ': Error while handling request');
                 }
             } else if (req.method === 'POST' || req.method === 'PUT') {
-                req.log.debug({body: req.body}, 'POST/PUT: body');
+                req.log.debug({
+                    method: req.method,
+                    url: req.url,
+                    path: (req.route && req.route.path) || req.url,
+                    statusCode: res.statusCode,
+                    'x-real-ip': req.headers['x-real-ip'],
+                    username: req.user && req.user.email,
+                    body: req.body}, 'POST/PUT: body');
             }
 
             req.log.debug({res: res}, 'response sent');

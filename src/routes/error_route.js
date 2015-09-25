@@ -7,7 +7,6 @@ var error = require('../util/error');
 
 
 module.exports = function (swagger, config) {
-    var log = require('../util/log').getLogger(config);
     var baseUrl = '/error';
 
     swagger.addModels({
@@ -47,7 +46,7 @@ module.exports = function (swagger, config) {
                 user: req.user.id,
                 username: req.user.username
             };
-            log.child(options).error(errorObj, 'CLIENT error posted to /errors');
+            req.log.child(options).error(errorObj, 'CLIENT error posted to /errors');
 
             res.send(200);
             return next();
