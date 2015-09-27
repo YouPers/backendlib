@@ -82,13 +82,26 @@ module.exports = {
                     req.log.info({
                         method: req.method,
                         url: req.url,
+                        path: (req.route && req.route.path) || req.url,
                         statusCode: res.statusCode,
                         'x-real-ip': req.headers['x-real-ip'],
                         username: req.user && req.user.email,
-                        message: err.message
-                    }, res.statusCode + ": " + err.name);
+                        error: err.message
+                    }, res.statusCode + ": " + err.name || err.message);
                 } else {
-                    req.log.info({req: req, err: err, res: res, reqbody: req.body, resbody: res.body}, res.statusCode + ': ' +  err.name + ': Error while handling request');
+                    req.log.error({
+                        req: req,
+                        err: err,
+                        res: res,
+                        method: req.method,
+                        url: req.url,
+                        path: (req.route && req.route.path) || req.url,
+                        'x-real-ip': req.headers['x-real-ip'],
+                        username: req.user && req.user.email,
+                        statusCode: res.statusCode,
+                        reqbody: req.body,
+                        resbody: res.body
+                    }, res.statusCode + ': ' +  err.name + ': Error while handling request');
                 }
             } else if (req.method === 'POST' || req.method === 'PUT') {
                 req.log.debug({
@@ -98,10 +111,17 @@ module.exports = {
                     statusCode: res.statusCode,
                     'x-real-ip': req.headers['x-real-ip'],
                     username: req.user && req.user.email,
-                    body: req.body}, 'POST/PUT: body');
+                    reqbody: req.body}, 'POST/PUT: received body');
             }
 
-            req.log.debug({res: res}, 'response sent');
+            req.log.debug({res: res,
+                resbody: res.body,
+                method: req.method,
+                url: req.url,
+                'x-real-ip': req.headers['x-real-ip'],
+                username: req.user && req.user.email,
+                path: (req.route && req.route.path) || req.url,
+                statusCode: res.statusCode}, 'response body');
         });
 
         // initialize i18n
