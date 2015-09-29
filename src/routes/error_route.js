@@ -4,7 +4,7 @@
  */
 
 var error = require('../util/error');
-var _ = require('_');
+var _ = require('lodash');
 
 
 module.exports = function (swagger, config) {
