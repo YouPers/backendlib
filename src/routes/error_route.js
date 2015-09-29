@@ -4,6 +4,7 @@
  */
 
 var error = require('../util/error');
+var _ = require('_');
 
 
 module.exports = function (swagger, config) {
@@ -35,18 +36,17 @@ module.exports = function (swagger, config) {
         },
         action: function (req, res, next) {
 
-            if(!req.body) {
-                next(new error.MissingParameterError({ required: 'error object'}));
+            if (!req.body) {
+                next(new error.MissingParameterError({required: 'error object'}));
             }
 
             var errorObj = req.body;
 
-            var options = {
+            req.log.error(_.extend(errorObj, {
                 type: 'client',
                 user: req.user.id,
                 username: req.user.username
-            };
-            req.log.child(options).error(errorObj, 'CLIENT error posted to /errors');
+            }), 'CLIENT error posted to /errors');
 
             res.send(200);
             return next();
