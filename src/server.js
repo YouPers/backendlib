@@ -125,7 +125,7 @@ module.exports = {
                     'x-real-ip': req.headers['x-real-ip'],
                     username: req.user && req.user.email,
                     reqbody: req.body
-                }, 'POST/PUT: received body');
+                }, 'POST/PUT: request body');
             }
 
             req.log.debug({
