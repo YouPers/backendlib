@@ -10,7 +10,7 @@ var restify = require("restify"),
 module.exports = {
     createSwaggeredServer: function createSwaggerdServer(name, config) {
 
-        if (config.longjohn === 'enabled'){
+        if (config.longjohn === 'enabled') {
             console.log("LONGJOHN: enabling longjohn stacktraces: make sure this does not run in production");
             var longjohn = require('longjohn');
             longjohn.async_trace_limit = 5;  // defaults to 10
@@ -27,31 +27,44 @@ module.exports = {
             name: name,
             version: config.version,
             log: logger,
-            formatters: {'text/calendar; q=0.1': function(req, res, body) {
+            formatters: {
+                'text/calendar; q=0.1': function (req, res, body) {
 
-                // it seems, that in some error cases restify chooses this formatter to format errors, which does
-                // clearly not make any sense. need to reproduce and trace through the restify code, that chooses the
-                // formatter as soon as we can reliable reproduce.
-                if (!_.isString(body)) {
-                    console.log("WENT THROUGH THE IMPOSSIBLE PATH in app.js, please FIX ME");
-                    body = body.toString();
+                    // it seems, that in some error cases restify chooses this formatter to format errors, which does
+                    // clearly not make any sense. need to reproduce and trace through the restify code, that chooses the
+                    // formatter as soon as we can reliable reproduce.
+                    if (!_.isString(body)) {
+                        console.log("WENT THROUGH THE IMPOSSIBLE PATH in app.js, please FIX ME");
+                        body = body.toString();
+                    }
+                    res.setHeader('Content-Length', Buffer.byteLength(body));
+                    return body;
                 }
-                res.setHeader('Content-Length', Buffer.byteLength(body));
-                return body;
-            }}
+            }
         });
 
         // setting logging of request and response
         // setup better error stacktraces
 
         server.pre(function (req, response, next) {
-            req.log.debug({req_id: req.getId(), req: req, path:  (req.route && req.router.path) ||req.url, method: req.method}, 'start processing request');
+            req.log.debug({
+                req_id: req.getId(),
+                req: req,
+                path: (req.route && req.router.path) || req.url,
+                method: req.method
+            }, 'start processing request');
             return next();
         });
 
 
         server.on('uncaughtException', function (req, res, route, err) {
-            req.log.error({err: err, method: req.method, url: req.url, path: (req.route && req.route.path) ||req.url, message: err.message}, "uncaught server exception in restify server");
+            req.log.error({
+                err: err,
+                method: req.method,
+                url: req.url,
+                path: (req.route && req.route.path) || req.url,
+                message: err.message
+            }, "uncaught server exception in restify server");
             console.error('Caught uncaught server Exception: ' + err);
             if (!res.headersSent) {
                 res.send(new error.InternalError(err, err.message || 'unexpected error'));
@@ -59,8 +72,8 @@ module.exports = {
             return (true);
         });
 
-        process.on('uncaughtException', function(err) {
-            logger.error({err:err, message: err.message}, "UNCAUGHT PROCESS ERROR: logging to error: " + err.message);
+        process.on('uncaughtException', function (err) {
+            logger.error({err: err, message: err.message}, "UNCAUGHT PROCESS ERROR: logging to error: " + err.message);
             console.error(new Date().toString() + "Exiting process because of Uncaught Error: " + err.message + " err: " + err);
             process.exit(1);
         });
@@ -101,7 +114,7 @@ module.exports = {
                         statusCode: res.statusCode,
                         reqbody: req.body,
                         resbody: res.body
-                    }, res.statusCode + ': ' +  err.name + ': Error while handling request');
+                    }, res.statusCode + ': ' + err.name + ': Error while handling request');
                 }
             } else if (req.method === 'POST' || req.method === 'PUT') {
                 req.log.debug({
@@ -111,17 +124,20 @@ module.exports = {
                     statusCode: res.statusCode,
                     'x-real-ip': req.headers['x-real-ip'],
                     username: req.user && req.user.email,
-                    reqbody: req.body}, 'POST/PUT: received body');
+                    reqbody: req.body
+                }, 'POST/PUT: received body');
             }
 
-            req.log.debug({res: res,
+            req.log.debug({
+                res: res,
                 resbody: res.body,
                 method: req.method,
                 url: req.url,
                 'x-real-ip': req.headers['x-real-ip'],
                 username: req.user && req.user.email,
                 path: (req.route && req.route.path) || req.url,
-                statusCode: res.statusCode}, 'response body');
+                statusCode: res.statusCode
+            }, 'response body');
         });
 
         // initialize i18n
@@ -131,8 +147,8 @@ module.exports = {
         };
 
         var i18n = ypi18n.initialize(options);
-        var myCustomHeaders = ['X-Requested-With','Cookie', 'Set-Cookie',  'X-Api-Version', 'X-Request-Id', 'yp-language', 'location', 'authorization'];
-        _.forEach(myCustomHeaders, function(header) {
+        var myCustomHeaders = ['X-Requested-With', 'Cookie', 'Set-Cookie', 'X-Api-Version', 'X-Request-Id', 'yp-language', 'location', 'authorization'];
+        _.forEach(myCustomHeaders, function (header) {
             restify.CORS.ALLOW_HEADERS.push(header);
         });
 
@@ -145,7 +161,7 @@ module.exports = {
         server.use(restify.requestLogger());
         server.use(restify.acceptParser(server.acceptable));
         server.use(restify.queryParser());
-        server.use(restify.bodyParser({ mapParams: false }));
+        server.use(restify.bodyParser({mapParams: false}));
         server.use(ypi18n.angularTranslateI18nextAdapterPre);
         server.use(i18n.handle);
         server.use(ypi18n.angularTranslateI18nextAdapterPost);
@@ -170,7 +186,12 @@ module.exports = {
                 req.log.error({req: req, res: res, err: err, body: req.body}, "Uncaught error in Swagger ErrorHandler");
                 res.send(err.statusCode, err);
             } else {
-                req.log.error({req: req, res: res, err: err, body: req.body}, req.method + " failed for path '" + require('url').parse(req.url).href + "': " + error);
+                req.log.error({
+                    req: req,
+                    res: res,
+                    err: err,
+                    body: req.body
+                }, req.method + " failed for path '" + require('url').parse(req.url).href + "': " + error);
                 res.send(500, new error.InternalError(err.message || 'unexpected error', err));
             }
         });
@@ -198,7 +219,6 @@ module.exports = {
 
             // add common routes
             _addRoutes(__dirname + '/routes', '_route.js');
-
 
 
             // need to call swagger configure after adding all routes, so swagger adds the documentation endpoints.
