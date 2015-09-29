@@ -54,7 +54,7 @@ module.exports = function (config) {
             var myData = _.clone(data);
 
             _.forEach(myData, function(value, key) {
-                if (key.startsWith('i18n')) {
+                if (key.indexOf('i18n') === 0) {
                     delete myData[key];
                     myData[_.camelCase(key.substring(4))] = i18n.t(value, translationData);
                 }
