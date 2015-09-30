@@ -154,7 +154,7 @@ module.exports = function (config) {
                     } else if (device.deviceType === 'android') {
                         devices.android[device.token] = oneuser;
                     } else {
-                        return cb(new Error('unkown deviceType: ' + device.deviceType));
+                        return done(new Error('unkown deviceType: ' + device.deviceType));
                     }
                 });
 
@@ -192,7 +192,7 @@ module.exports = function (config) {
                     return done(null, {result: "no android devices found for this user"});
                 }
 
-                async.forEach(androidDevices, function(user, token) {
+                _.forEach(androidDevices, function(user, token) {
                     var myData = user.myData;
                     myData.notificationId = user.notificationId;
 
