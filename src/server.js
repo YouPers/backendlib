@@ -144,6 +144,9 @@ module.exports = {
         var options = {
             fallbackLng: config.i18n.fallbackLng,
             supportedLngs: config.i18n.supportedLngs,
+            ns: {
+                namespaces: config.i18n.namespaces || ['email', 'ical', 'general']
+            }
         };
 
         var i18n = ypi18n.initialize(options);
