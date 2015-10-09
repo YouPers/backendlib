@@ -51,6 +51,9 @@ module.exports = function (config) {
         translationData.user = user.toJSON();
 
         i18n.setLng(locale, function(err, t) {
+            if (err) {
+                return cb(err);
+            }
             var myData = _.clone(data);
 
             _.forEach(myData, function(value, key) {

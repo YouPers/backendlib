@@ -141,7 +141,7 @@ module.exports = {
         });
 
         // initialize i18n
-        var options = {
+        var i18nOptions = {
             fallbackLng: config.i18n.fallbackLng,
             supportedLngs: config.i18n.supportedLngs,
             ns: {
@@ -149,7 +149,7 @@ module.exports = {
             }
         };
 
-        var i18n = ypi18n.initialize(options);
+        var i18n = ypi18n.initialize(i18nOptions);
         var myCustomHeaders = ['X-Requested-With', 'Cookie', 'Set-Cookie', 'X-Api-Version', 'X-Request-Id', 'yp-language', 'location', 'authorization'];
         _.forEach(myCustomHeaders, function (header) {
             restify.CORS.ALLOW_HEADERS.push(header);

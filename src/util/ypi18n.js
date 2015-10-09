@@ -56,11 +56,11 @@ module.exports = function (config) {
         },
         initialize: function initialize(opts) {
 
-            var options = _.defaults(opts, {
-                fallbackLng: 'de',
-                supportedLngs: ['de', 'en', 'fr', 'it'],
+            var options = _.defaults(opts || {}, {
+                fallbackLng: _.get(config, 'i18n.fallbackLng') || 'de',
+                supportedLngs: _.get(config, 'i18n.supportedLngs') || ['de', 'en', 'fr', 'it'],
                 ns: {
-                    namespaces: ['email', 'ical', 'general']
+                    namespaces: _.get(config, 'i18n.namespaces') || ['email', 'ical', 'general']
                 },
                 resGetPath: 'translations/__ns__.__lng__.json',
                 saveMissing: false,
