@@ -6,6 +6,10 @@ var moment = require('moment-timezone');
 var async = require('async');
 
 module.exports = function (config) {
+
+
+    ///////////////////////////////////////////////
+    // setup
     var i18n = require('../util/ypi18n')(config).initialize();
 
     var TIME_TO_LIVE = config.push.timeToLive || (60 * 60 * 24 * 4);
@@ -42,6 +46,8 @@ module.exports = function (config) {
         log.info("PushMessaging: ios apple apn messaging NOT enabled in config");
     }
 
+    /////////////////////////////////////////////////////////////////////
+    // internal helper functions
 
     function _personalizeData(data, user, translationData, cb) {
         var locale = _.get(user, 'profile.language') || _.get(config, 'i18n.fallbackLng', 'en');
@@ -65,6 +71,25 @@ module.exports = function (config) {
             cb(null, myData);
         });
     }
+
+    function _removeDeviceFromUserProfile(profile, token, cb) {
+        log.trace({token: token, profile: profile.toObject()}, "trying to remove device");
+        _.forEach(profile.devices, function(device) {
+            if (device.token === token) {
+                log.trace({device: device.toObject()}, "found device to remove");
+                device.remove();
+            }
+        });
+        profile.save(function(err) {
+            if (err) {
+                return cb(err);
+            }
+            return cb(null, "Android device 'NotRegistered', removed it from Db");
+        });
+    }
+
+    ////////////////////////////////////////
+    // Main entry point
 
     function sendPush(user, data, collapseKey, translationData, cb) {
         // this function takes one of those options as the first parameter
@@ -138,9 +163,9 @@ module.exports = function (config) {
         }
 
 
-        function _sendPushWithPopulatedProfile(user, data, collapseKey, translationData, cb) {
+        function _sendPushWithPopulatedProfile(userArray, data, collapseKey, translationData, cb) {
 
-            user = _.isArray(user) ? user : [user];
+            userArray = _.isArray(userArray) ? userArray : [userArray];
 
             var devices = {
                 android: {},
@@ -150,7 +175,7 @@ module.exports = function (config) {
             var notificationsToSave = [];
 
 
-            async.forEach(user, function(oneuser, done){
+            async.forEach(userArray, function(oneuser, done){
                 _.forEach(oneuser.profile.devices,function(device) {
                     if (device.deviceType === 'ios') {
                         devices.ios[device.token] = oneuser;
@@ -186,7 +211,7 @@ module.exports = function (config) {
                 if (err) {
                     return cb(err);
                 }
-                _sendAndroidMessages(devices.android, _finalCb);
+                _sendAndroidMessages(devices.android, _sendAndroidCb);
 
             });
 
@@ -195,7 +220,7 @@ module.exports = function (config) {
                     return done(null, {result: "no android devices found for this user"});
                 }
 
-                _.forEach(androidDevices, function(user, token) {
+                async.forEachOf(androidDevices, function(user, token, cb) {
                     var myData = user.myData;
                     myData.notificationId = user.notificationId;
 
@@ -211,10 +236,17 @@ module.exports = function (config) {
                         if (err) {
                             return cb(err);
                         }
+
+
+                        if (result.failure > 0 && result.results[0].error === 'NotRegistered') {
+                            log.trace(result, "android signaled a NotRegistred Error for this device, we remove it from the DB");
+                            return _removeDeviceFromUserProfile(user.profile, token, cb);
+                        }
+
                         log.trace({result: result, user: user.username || user.email || user.id}, "android gcm push message(s) sent");
-                        return done(null, result);
+                        return cb(null, result);
                     });
-                });
+                }, done);
 
             }
 
@@ -245,11 +277,11 @@ module.exports = function (config) {
                     }
 
                 });
-                log.trace({result: result, user: user.username || user.email || user.id}, "ios apple push message(s) sent");
+                log.trace({result: result, user: userArray.username || userArray.email || userArray.id}, "ios apple push message(s) sent");
                 return done(null, result);
             }
 
-            function _finalCb(err, androidResult) {
+            function _sendAndroidCb(err, androidResult) {
                 if (err) {
                     return cb(err);
                 }

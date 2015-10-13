@@ -74,7 +74,7 @@ module.exports = {
 
         process.on('uncaughtException', function (err) {
             logger.error({err: err, message: err.message}, "UNCAUGHT PROCESS ERROR: logging to error: " + err.message);
-            console.error(new Date().toString() + "Exiting process because of Uncaught Error: " + err.message + " err: " + err);
+            console.error(new Date().toString() + ": Exiting process because of Uncaught Error: " + err.message + ", err: " + err);
             process.exit(1);
         });
 
