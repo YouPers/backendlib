@@ -30,7 +30,10 @@ var mongoose = require('mongoose'),
 var genericBatch = function genericBatch(feeder, worker, context) {
     context = context || this;
     context.batchId = shortid.generate();
-    var log = context.log = context.log.child({batchId: context.name + ':' + context.batchId});
+
+    // log.child() overwrites the 'hostname' field of the logger with the default os.hostname(),
+    // but we want it to keep the 'hostname' of the parent logger
+    var log = context.log = context.log.child({batchId: context.name + ':' + context.batchId, hostname:  context.log.fields.hostname});
 
     context.i18n = i18n;
 
