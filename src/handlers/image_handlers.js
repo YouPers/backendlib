@@ -11,6 +11,7 @@ module.exports = function (config) {
             req.log.trace({req: req, body: req.body, reqFiles: req.files}, "imagePostFn");
 
             if (!req.files || !req.files.file || !req.files.file.path || !req.files.file.name) {
+                req.log.error({req: req, files: req.files, filesFile: _.get(req, 'files.file')}, "missing parameter in image post");
                 return next(new error.MissingParameterError({ required: ['file', 'file.name'], received: req.files} ));
             }
 
