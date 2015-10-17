@@ -600,7 +600,7 @@ function getAllFn(baseUrl, Model, fromAllOwners, config) {
         // check if this is a "personal" object (i.e. has an "owner" property),
         // if yes only send the objects of the currently logged in user
         var finder = {};
-        if (!fromAllOwners && Model.schema.paths['owner']) {
+        if (!fromAllOwners && Model.schema.paths['owner'] && !auth.isAdminForModel(req.user, mongoose.model('Profile'))) {
             if (!req.user || !req.user.id) {
                 return next(new error.NotAuthorizedError('Authentication required for this object'));
             } else {
