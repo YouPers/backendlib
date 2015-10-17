@@ -113,7 +113,7 @@ module.exports = {
                         username: req.user && req.user.email,
                         statusCode: res.statusCode,
                         reqbody: req.body,
-                        resbody: res.body
+                        resbody: res._body
                     }, res.statusCode + ': ' + err.name + ': Error while handling request');
                 }
             } else if (req.method === 'POST' || req.method === 'PUT') {
@@ -130,7 +130,7 @@ module.exports = {
 
             req.log.debug({
                 res: res,
-                resbody: res.body,
+                resbody: res._body,
                 method: req.method,
                 url: req.url,
                 'x-real-ip': req.headers['x-real-ip'],
