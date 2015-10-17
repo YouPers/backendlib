@@ -32,13 +32,28 @@ module.exports = function (config) {
         };
         log.debug(options, "node-apn options");
         apnConnection = new apn.Connection(options);
-        apnConnection.on('transmissionError', function(err, msg, token, info) {
-            console.log(err);
-            console.log(parseFloat(err));
-            console.log(apn.Errors);
-            console.log(_.findKey(apn.Errors, parseFloat(err)));
 
-            log.error({err: _.findKey(apn.Errors, function(v,k) {return v===parseFloat(err);}) || err, tokenBuffer: token, msg: msg, info: info}, "error upon ios apn push transmission");
+        apnConnection.on('transmissionError', function(errorCode, notification, device) {
+            if (errorCode === 8) {
+                // this is an invalid token, we remove the device from the users profile
+                log.info({device: device, notification: notification}, "invalid token found, removing from user");
+                return _removeInvalidIosDevice(device, function(err, result) {
+                    if (err) {
+                        log.error({err: err, device: device, notification: notification}, "error trying to remove invalid iOS token device");
+                    }
+                    log.debug({result: result, device: device }, "remove device done");
+                });
+            } else {
+                log.error({err: _.findKey(apn.Errors, function(v,k) {return v===parseFloat(errorCode);}), errorCode: errorCode, device: device, notification: notification}, "error upon ios apn push transmission");
+            }
+        });
+
+        apnConnection.on('transmitted', function(notification, device) {
+            log.debug({notification: notification, device: device}, "ios notification sucessfully transmitted");
+        });
+
+        apnConnection.on('error', function(err) {
+            log.error({err: err}, "error thrown on node-apn connection object");
         });
 
         log.info("PushMessaging: ios apple apn ENABLED");
@@ -72,6 +87,18 @@ module.exports = function (config) {
         });
     }
 
+    function _removeInvalidIosDevice(iosDevice, cb) {
+        var token = iosDevice.toString();
+        mongoose.model('Profile').find({devices: {$elemMatch: {token: token}}}).exec(function(err, profiles) {
+            if (err) {
+                return cb(err);
+            }
+            async.forEach(profiles, function(profile, done) {
+                return _removeDeviceFromUserProfile(profile, token, done);
+            }, cb);
+        });
+    }
+
     function _removeDeviceFromUserProfile(profile, token, cb) {
         log.trace({token: token, profile: profile.toObject()}, "trying to remove device");
         _.forEach(profile.devices, function(device) {
@@ -84,7 +111,7 @@ module.exports = function (config) {
             if (err) {
                 return cb(err);
             }
-            return cb(null, "Android device 'NotRegistered', removed it from Db");
+            return cb(null, "invalidDevice, 'NotRegistered (Android)' or 'InvalidToken (iOS)', removed it from Db");
         });
     }
 
@@ -93,7 +120,7 @@ module.exports = function (config) {
 
     function sendPush(user, data, collapseKey, translationData, cb) {
         // this function takes one of those options as the first parameter
-        // an object or an array of objects of the following types:
+        // - an object or an array of objects of the following types:
 
         // a) an object Id of a user
         // b) a partial user object without a profile attribute
@@ -102,7 +129,7 @@ module.exports = function (config) {
 
         // we need the full user object and the populated profile
 
-        // we determine the type by looking at the first
+        // we determine the type by looking at the first element
 
 
         if (_.isUndefined(cb)) {
