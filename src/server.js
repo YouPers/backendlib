@@ -128,16 +128,18 @@ module.exports = {
                 }, 'POST/PUT: request body');
             }
 
-            req.log.debug({
-                res: res,
-                resbody: res._body,
-                method: req.method,
-                url: req.url,
-                'x-real-ip': req.headers['x-real-ip'],
-                username: req.user && req.user.email,
-                path: (req.route && req.route.path) || req.url,
-                statusCode: res.statusCode
-            }, 'response body');
+            if (res._body && _.keys(res._body).length > 0) {
+                req.log.debug({
+                    res: res,
+                    resbody: res._body,
+                    method: req.method,
+                    url: req.url,
+                    'x-real-ip': req.headers['x-real-ip'],
+                    username: req.user && req.user.email,
+                    path: (req.route && req.route.path) || req.url,
+                    statusCode: res.statusCode
+                }, 'response body');
+            }
         });
 
         // initialize i18n
