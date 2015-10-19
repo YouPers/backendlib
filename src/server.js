@@ -9,19 +9,16 @@ var restify = require("restify"),
 
 module.exports = {
     createSwaggeredServer: function createSwaggerdServer(name, config) {
+        var auth = require('./util/auth').handlers(config);
+        var logger = require('./util/log').getLogger(config);
 
+        // setup better error stacktraces
         if (config.longjohn === 'enabled') {
             console.log("LONGJOHN: enabling longjohn stacktraces: make sure this does not run in production");
             var longjohn = require('longjohn');
             longjohn.async_trace_limit = 5;  // defaults to 10
             longjohn.empty_frame = 'ASYNC CALLBACK';
         }
-
-
-        var auth = require('./util/auth').handlers(config);
-        var logger = require('./util/log').getLogger(config);
-        var ypi18n = require('./util/ypi18n')(config);
-
 
         var server = restify.createServer({
             name: name,
@@ -43,9 +40,7 @@ module.exports = {
             }
         });
 
-        // setting logging of request and response
-        // setup better error stacktraces
-
+        // setting logging of request and response, uncaught errors
         server.pre(function (req, response, next) {
             req.log.debug({
                 req_id: req.getId(),
@@ -143,6 +138,8 @@ module.exports = {
         });
 
         // initialize i18n
+        var ypi18n = require('./util/ypi18n')(config);
+
         var i18nOptions = {
             fallbackLng: config.i18n.fallbackLng,
             supportedLngs: config.i18n.supportedLngs,
@@ -152,6 +149,8 @@ module.exports = {
         };
 
         var i18n = ypi18n.initialize(i18nOptions);
+
+        // setup CORS
         var myCustomHeaders = ['X-Requested-With', 'Cookie', 'Set-Cookie', 'X-Api-Version', 'X-Request-Id', 'yp-language', 'location', 'authorization'];
         _.forEach(myCustomHeaders, function (header) {
             restify.CORS.ALLOW_HEADERS.push(header);
@@ -188,15 +187,29 @@ module.exports = {
         swagger.setErrorHandler(function (req, res, err) {
 
             if (err.statusCode && err.restCode) {
-                req.log.error({req: req, res: res, err: err, body: req.body}, "Uncaught error in Swagger ErrorHandler");
+                req.log.error({req: req,
+                    err: err,
+                    url: req.url,
+                    path: (req.route && req.route.path) || req.url,
+                    'x-real-ip': req.headers['x-real-ip'],
+                    username: req.user && req.user.email,
+                    statusCode: res.statusCode,
+                    reqbody: req.body,
+                    resbody: res._body}, "Uncaught error in Swagger ErrorHandler");
                 res.send(err.statusCode, err);
             } else {
                 req.log.error({
                     req: req,
-                    res: res,
+                    method: req.method,
+                    url: req.url,
+                    path: (req.route && req.route.path) || req.url,
+                    'x-real-ip': req.headers['x-real-ip'],
+                    username: req.user && req.user.email,
+                    statusCode: res.statusCode,
+                    resbody: res._body,
                     err: err,
-                    body: req.body
-                }, req.method + " failed for path '" + require('url').parse(req.url).href + "': " + error);
+                    reqbody: req.body
+                }, req.method + " failed for path '" + require('url').parse(req.url).href + "': " + err);
                 res.send(500, new error.InternalError(err.message || 'unexpected error', err));
             }
         });
