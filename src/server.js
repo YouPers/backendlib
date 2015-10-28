@@ -125,7 +125,6 @@ module.exports = {
 
             if (res._body && _.keys(res._body).length > 0) {
                 req.log.debug({
-                    res: res,
                     resbody: _.isFunction(res._body.toObject) ? res._body.toObject() : res._body,
                     method: req.method,
                     url: req.url,
