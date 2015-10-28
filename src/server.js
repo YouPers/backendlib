@@ -108,7 +108,7 @@ module.exports = {
                         username: req.user && req.user.email,
                         statusCode: res.statusCode,
                         reqbody: req.body,
-                        resbody: res._body
+                        resbody: _.isFunction(res._body.toObject) ? res._body.toObject() : res._body
                     }, res.statusCode + ': ' + err.name + ': Error while handling request');
                 }
             } else if (req.method === 'POST' || req.method === 'PUT') {
@@ -126,7 +126,7 @@ module.exports = {
             if (res._body && _.keys(res._body).length > 0) {
                 req.log.debug({
                     res: res,
-                    resbody: res._body,
+                    resbody: _.isFunction(res._body.toObject) ? res._body.toObject() : res._body,
                     method: req.method,
                     url: req.url,
                     'x-real-ip': req.headers['x-real-ip'],
