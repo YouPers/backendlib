@@ -123,11 +123,10 @@ module.exports = {
                 }, 'POST/PUT: request body');
             }
 
-            if (req.log.debug() && res._body && _.keys(res._body).length > 0) {
+            if (req.log.trace() && res._body && _.keys(res._body).length > 0) {
 
-                var resbody = JSON.stringify(res._body);
-                req.log.debug({
-                    resbody: resbody,
+                req.log.trace({
+                    resbody: res._body,
                     method: req.method,
                     url: req.url,
                     'x-real-ip': req.headers['x-real-ip'],
