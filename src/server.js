@@ -123,9 +123,11 @@ module.exports = {
                 }, 'POST/PUT: request body');
             }
 
-            if (res._body && _.keys(res._body).length > 0) {
+            if (req.log.debug() && res._body && _.keys(res._body).length > 0) {
+
+                var resbody = JSON.stringify(res._body);
                 req.log.debug({
-                    resbody: _.isFunction(res._body.toObject) ? res._body.toObject() : res._body,
+                    resbody: resbody,
                     method: req.method,
                     url: req.url,
                     'x-real-ip': req.headers['x-real-ip'],
