@@ -102,7 +102,7 @@ module.exports = function (config) {
     function _removeDeviceFromUserProfile(profile, token, cb) {
         log.trace({token: token, profile: profile.toObject()}, "trying to remove device");
         _.forEach(profile.devices, function(device) {
-            if (device.token === token) {
+            if (device && (device.token === token)) {
                 log.trace({device: device.toObject()}, "found device to remove");
                 device.remove();
             }
