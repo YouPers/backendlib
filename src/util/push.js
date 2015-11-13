@@ -33,26 +33,34 @@ module.exports = function (config) {
         log.debug(options, "node-apn options");
         apnConnection = new apn.Connection(options);
 
-        apnConnection.on('transmissionError', function(errorCode, notification, device) {
+        apnConnection.on('transmissionError', function (errorCode, notification, device) {
             if (errorCode === 8) {
                 // this is an invalid token, we remove the device from the users profile
                 log.info({device: device, notification: notification}, "invalid token found, removing from user");
-                return _removeInvalidIosDevice(device, function(err, result) {
+                return _removeInvalidIosDevice(device, function (err, result) {
                     if (err) {
-                        log.error({err: err, device: device, notification: notification}, "error trying to remove invalid iOS token device");
+                        log.error({
+                            err: err,
+                            device: device,
+                            notification: notification
+                        }, "error trying to remove invalid iOS token device");
                     }
-                    log.debug({result: result, device: device }, "remove device done");
+                    log.debug({result: result, device: device}, "remove device done");
                 });
             } else {
-                log.error({err: _.findKey(apn.Errors, function(v,k) {return v===parseFloat(errorCode);}), errorCode: errorCode, device: device, notification: notification}, "error upon ios apn push transmission");
+                log.error({
+                    err: _.findKey(apn.Errors, function (v, k) {
+                        return v === parseFloat(errorCode);
+                    }), errorCode: errorCode, device: device, notification: notification
+                }, "error upon ios apn push transmission");
             }
         });
 
-        apnConnection.on('transmitted', function(notification, device) {
+        apnConnection.on('transmitted', function (notification, device) {
             log.debug({notification: notification, device: device}, "ios notification sucessfully transmitted");
         });
 
-        apnConnection.on('error', function(err) {
+        apnConnection.on('error', function (err) {
             log.error({err: err}, "error thrown on node-apn connection object");
         });
 
@@ -71,13 +79,13 @@ module.exports = function (config) {
         translationData = translationData || {};
         translationData.user = user.toJSON();
 
-        i18n.setLng(locale, function(err, t) {
+        i18n.setLng(locale, function (err, t) {
             if (err) {
                 return cb(err);
             }
             var myData = _.clone(data);
 
-            _.forEach(myData, function(value, key) {
+            _.forEach(myData, function (value, key) {
                 if (key.indexOf('i18n') === 0) {
                     delete myData[key];
                     myData[_.camelCase(key.substring(4))] = i18n.t(value, translationData);
@@ -89,11 +97,11 @@ module.exports = function (config) {
 
     function _removeInvalidIosDevice(iosDevice, cb) {
         var token = iosDevice.toString();
-        mongoose.model('Profile').find({devices: {$elemMatch: {token: token}}}).exec(function(err, profiles) {
+        mongoose.model('Profile').find({devices: {$elemMatch: {token: token}}}).exec(function (err, profiles) {
             if (err) {
                 return cb(err);
             }
-            async.forEach(profiles, function(profile, done) {
+            async.forEach(profiles, function (profile, done) {
                 return _removeDeviceFromUserProfile(profile, token, done);
             }, cb);
         });
@@ -101,13 +109,13 @@ module.exports = function (config) {
 
     function _removeDeviceFromUserProfile(profile, token, cb) {
         log.trace({token: token, profile: profile.toObject()}, "trying to remove device");
-        _.forEach(profile.devices, function(device) {
+        _.forEach(profile.devices, function (device) {
             if (device && (device.token === token)) {
                 log.trace({device: device.toObject()}, "found device to remove");
                 device.remove();
             }
         });
-        profile.save(function(err) {
+        profile.save(function (err) {
             if (err) {
                 return cb(err);
             }
@@ -176,7 +184,7 @@ module.exports = function (config) {
         } else if (!firstUser.profile._id) {
             log.debug("sending push for user with populated profile");
             // this is case c)
-            mongoose.model('Profile').populate(user, {path: 'profile'}, function(err, populatedUser) {
+            mongoose.model('Profile').populate(user, {path: 'profile'}, function (err, populatedUser) {
                 if (err) {
                     return cb(err);
                 }
@@ -202,8 +210,8 @@ module.exports = function (config) {
             var notificationsToSave = [];
 
 
-            async.forEach(userArray, function(oneuser, done){
-                _.forEach(oneuser.profile.devices,function(device) {
+            async.forEach(userArray, function (oneuser, done) {
+                _.forEach(oneuser.profile.devices, function (device) {
                     if (device.deviceType === 'ios') {
                         devices.ios[device.token] = oneuser;
                     } else if (device.deviceType === 'android') {
@@ -213,28 +221,42 @@ module.exports = function (config) {
                     }
                 });
 
-                _personalizeData(data, oneuser, translationData, function(err, myData) {
+                mongoose.model('Notification').count({
+                    owner: oneuser._id,
+                    status: 'unread'
+                }).exec(function (err, unreadCount) {
                     if (err) {
                         return done(err);
                     }
-                    oneuser.myData = myData;
-                    log.trace({user: oneuser.username, locale: oneuser.profile.language, myData: myData}, "personalized Data for this user");
 
-                    var myNotification = {
-                        _id: mongoose.Types.ObjectId(),
-                        gcmtype: myData.type,
-                        title: myData.title,
-                        description: myData.description || myData.message,
-                        triggeringUser: myData.triggeringUser,
-                        owner: oneuser._id,
-                        data: myData,
-                        expires: myData.expires
-                    };
-                    notificationsToSave.push(myNotification);
-                    oneuser.notificationId = myNotification._id;
-                    return done();
+                    _personalizeData(data, oneuser, translationData, function (err, myData) {
+                        if (err) {
+                            return done(err);
+                        }
+                        myData.unreadCount = unreadCount;
+                        oneuser.myData = myData;
+                        log.trace({
+                            user: oneuser.username,
+                            locale: oneuser.profile.language,
+                            myData: myData
+                        }, "personalized Data for this user");
+
+                        var myNotification = {
+                            _id: mongoose.Types.ObjectId(),
+                            gcmtype: myData.type,
+                            title: myData.title,
+                            description: myData.description || myData.message,
+                            triggeringUser: myData.triggeringUser,
+                            owner: oneuser._id,
+                            data: myData,
+                            expires: myData.expires
+                        };
+                        notificationsToSave.push(myNotification);
+                        oneuser.notificationId = myNotification._id;
+                        return done();
+                    });
                 });
-            }, function(err) {
+            }, function (err) {
                 if (err) {
                     return cb(err);
                 }
@@ -247,7 +269,7 @@ module.exports = function (config) {
                     return done(null, {result: "no android devices found for this user"});
                 }
 
-                async.forEachOf(androidDevices, function(user, token, cb) {
+                async.forEachOf(androidDevices, function (user, token, cb) {
                     var myData = user.myData;
                     myData.notificationId = user.notificationId;
 
@@ -270,7 +292,10 @@ module.exports = function (config) {
                             return _removeDeviceFromUserProfile(user.profile, token, cb);
                         }
 
-                        log.trace({result: result, user: user.username || user.email || user.id}, "android gcm push message(s) sent");
+                        log.trace({
+                            result: result,
+                            user: user.username || user.email || user.id
+                        }, "android gcm push message(s) sent");
                         return cb(null, result);
                     });
                 }, done);
@@ -285,26 +310,33 @@ module.exports = function (config) {
                     sent: 0,
                     errored: 0
                 };
-                _.forEach(iosDevices, function(user, token) {
+                _.forEach(iosDevices, function (user, token) {
                     var note = new apn.Notification();
                     var myData = user.myData;
                     myData.notificationId = user.notificationId;
 
-                    note.expiry = (data.expires && Math.floor(data.expires/1000)) || (Math.floor(Date.now() / 1000) + TIME_TO_LIVE);
-                    note.badge = data.badge || 1;
+                    note.expiry = (data.expires && Math.floor(data.expires / 1000)) || (Math.floor(Date.now() / 1000) + TIME_TO_LIVE);
+                    note.badge = data.unreadCount || 1;
                     note.alert = data.message || data.description;
                     note.payload = myData;
                     try {
-                        var myDevice =  new apn.Device(token);
+                        var myDevice = new apn.Device(token);
                         apnConnection.pushNotification(note, myDevice);
                         result.sent++;
                     } catch (err) {
-                        log.info({err: err, token: token, user: user.username || user.email || user.id}, "PushNotification: Error while sending ios Push");
+                        log.info({
+                            err: err,
+                            token: token,
+                            user: user.username || user.email || user.id
+                        }, "PushNotification: Error while sending ios Push");
                         result.errored++;
                     }
 
                 });
-                log.trace({result: result, user: userArray.username || userArray.email || userArray.id}, "ios apple push message(s) sent");
+                log.trace({
+                    result: result,
+                    user: userArray.username || userArray.email || userArray.id
+                }, "ios apple push message(s) sent");
                 return done(null, result);
             }
 
@@ -313,12 +345,12 @@ module.exports = function (config) {
                     return cb(err);
                 }
                 if (apnConnection) {
-                    _sendIosMessages(devices.ios, function(err, iosResult) {
+                    _sendIosMessages(devices.ios, function (err, iosResult) {
                         if (err) {
                             return cb(err);
                         }
                         log.debug({notsToSave: notificationsToSave}, "saving notifications");
-                        mongoose.model('Notification').create(notificationsToSave, function(err) {
+                        mongoose.model('Notification').create(notificationsToSave, function (err) {
                             if (err) {
                                 return cb(err);
                             }
@@ -327,7 +359,7 @@ module.exports = function (config) {
                     });
                 } else {
                     log.debug({notsToSave: notificationsToSave}, "saving notifications");
-                    mongoose.model('Notification').create(notificationsToSave, function(err) {
+                    mongoose.model('Notification').create(notificationsToSave, function (err) {
                         if (err) {
                             return cb(err);
                         }
