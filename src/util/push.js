@@ -228,12 +228,12 @@ module.exports = function (config) {
                     if (err) {
                         return done(err);
                     }
-
+                    log.debug({unreadCount: unreadCount, user: oneuser.username}, 'Got unread notifications count');
                     _personalizeData(data, oneuser, translationData, function (err, myData) {
                         if (err) {
                             return done(err);
                         }
-                        myData.unreadCount = unreadCount;
+                        myData.unreadCount = unreadCount + 1;
                         oneuser.myData = myData;
                         log.trace({
                             user: oneuser.username,
