@@ -292,7 +292,7 @@ module.exports = function (config) {
 
                     note.expiry = (data.expires && Math.floor(data.expires/1000)) || (Math.floor(Date.now() / 1000) + TIME_TO_LIVE);
                     note.badge = data.badge || 1;
-                    note.alert = data.message;
+                    note.alert = data.message || data.description;
                     note.payload = myData;
                     try {
                         var myDevice =  new apn.Device(token);
