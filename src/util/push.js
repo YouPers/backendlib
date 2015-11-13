@@ -36,34 +36,35 @@ module.exports = function (config) {
         apnConnection.on('transmissionError', function (errorCode, notification, device) {
             if (errorCode === 8) {
                 // this is an invalid token, we remove the device from the users profile
-                log.info({device: device, notification: notification}, "invalid token found, removing from user");
+                log.info({device: device.toString(), notification: notification}, "invalid token found, removing from user");
                 return _removeInvalidIosDevice(device, function (err, result) {
                     if (err) {
                         log.error({
                             err: err,
-                            device: device,
+                            device: device.toString(),
                             notification: notification
                         }, "error trying to remove invalid iOS token device");
                     }
-                    log.debug({result: result, device: device}, "remove device done");
+                    log.debug({result: result, device: device.toString()}, "remove device done");
                 });
             } else {
                 log.error({
                     err: _.findKey(apn.Errors, function (v, k) {
                         return v === parseFloat(errorCode);
-                    }), errorCode: errorCode, device: device, notification: notification
+                    }), errorCode: errorCode, device: device.toString(), notification: notification
                 }, "error upon ios apn push transmission");
             }
         });
 
         apnConnection.on('transmitted', function (notification, device) {
-            log.debug({notification: notification, device: device}, "ios notification sucessfully transmitted");
+            log.debug({notification: notification, device: device.toString()}, "ios notification sucessfully transmitted");
         });
 
         apnConnection.on('error', function (err) {
             log.error({err: err}, "error thrown on node-apn connection object");
         });
 
+        log.info("PushMessaging: ios apple apn ENABLED");
         log.info("PushMessaging: ios apple apn ENABLED");
     } else {
         log.info("PushMessaging: ios apple apn messaging NOT enabled in config");
