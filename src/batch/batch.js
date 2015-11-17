@@ -8,20 +8,20 @@ var mongoose = require('mongoose'),
  * Generic Batch skeleton that should be used to implement any scheduled batch task that can be expressed with
  * the feeder/worker pattern.
  *
- * Implememtation notes:
+ * Implementation notes:
  * This implementation uses node.async.forEachLimit to process all workItems the feeder returns. The maximal concurrency
  * can be controlled by the 'concurrency' attribute to be configured in the batch scheduler.
  *
- * It can be used
- * in cases:
+ * It can be used in cases:
  * - where the feeder runs reasonably fast so we can wait until it returns all workItems before starting
  * to process the workitems,
- * - where we have no need to use multiple node processes (this means, jobs that do IO (e.g. some DB-calls and than sending an
- * email are perfectly fine, BUT jobs with heavy CPU processing will need another solution.
+ * - where we have no need to use multiple node processes (this means, for example: jobs that do IO (e.g. some DB-calls and than send an
+ * email are perfectly fine, BUT jobs with heavy CPU processing will need another solution to distribute the load to
+ * multiple processes
  *
- * @param feeder(callback(err, workItems), args...) the feeder function that finds all work items to be processed. Gets a callback it
+ * @param feeder(callback(err, workItems), args...): the feeder function that finds all work items to be processed. Gets a callback it
  * needs to call at the end. Feeder is run in the Batch-Context, e.g. it can get 'this.log', 'this.i18n', 'this.name' or 'this.batchId'
- * @param worker(workItem, callback(err)) the worker function that processes one specific work item. Gets a callback it
+ * @param worker(workItem, callback(err, result)): the worker function that processes one specific work item. Gets a callback it
  * needs to call at the end. Worker is run in the Batch-Context, e.g. it can get 'this.log', 'this.i18n', 'this.name' or 'this.batchId'
  * @param context The context where the feeder and worker are supposed to run in, usually passed from the scheduler job context.
  * @param additional optional arguments: are passed on to the feeder and the worker function after their respective
@@ -33,7 +33,7 @@ var genericBatch = function genericBatch(feeder, worker, context) {
 
     // log.child() overwrites the 'hostname' field of the logger with the default os.hostname(),
     // but we want it to keep the 'hostname' of the parent logger
-    var log = context.log = context.log.child({batchId: context.name + ':' + context.batchId, hostname:  context.log.fields.hostname});
+    var log = context.log = context.log.child({batchId: context.name + ':' + context.batchId, batchName: context.name, hostname:  context.log.fields.hostname});
 
     context.i18n = i18n;
 
@@ -90,7 +90,7 @@ var genericBatch = function genericBatch(feeder, worker, context) {
                 var myErr = new Error('WorkItemProcessingError: ' + err.message);
                 myErr.cause = err;
                 myErr.workItem = workItem.workItemId || workItem._id;
-                log.error({err: err}, "Uncaught Error in Batch Run: " + err.message);
+                log.error({err: err, workItemId: workItem.workItemId}, "Uncaught Error in Batch Run: " + err.message);
                 batchResult.errored.push({id: workItem.workItemId, message: err.message, code: err.code});
                 return done(myErr);
             }
@@ -104,7 +104,7 @@ var genericBatch = function genericBatch(feeder, worker, context) {
             }
 
             if (err) {
-                log.error({err: err, batchResult: batchResult}, 'Batch Job: ' + context.name + ":" + context.batchId + " : Error while completing the workItems");
+                log.error({err: err, batchResult: batchResult}, 'Batch Job: ' + context.name + ":" + context.batchId + " : ERROR while completing the workItems");
             } else {
                 log.info({batchResult: batchResult}, 'Batch Job: ' + context.name + ":" + context.batchId + ": FINISHED");
             }
@@ -113,7 +113,7 @@ var genericBatch = function genericBatch(feeder, worker, context) {
             var myReport = new BatchReport(batchResult);
             myReport.save(function(err, saved) {
                 if (err) {
-                    log.error({err: err}, "Error saving the BatchReport");
+                    log.error({err: err, report: myReport.toObject()}, "Error saving the BatchReport");
                 }
                 if (context.config &&
                     context.config.batch &&

@@ -1,6 +1,38 @@
 var cronJob = require('cron').CronJob,
     _ = require('lodash');
 
+/**
+ * simple job scheduler that takes a an array of job definitions to execute at a specific cron-time, e.g.:
+ *
+ * var jobs = [
+ * {
+ *    name: 'CompleteOpenTeamChallenges',
+ *    description: 'completes all open TeamChallenges',
+ *    cronTime: '00 00 12 * * 0,5,6',
+ *    onTick: require('./batches/completeOpenTeamChallenges').run,
+ *    environments: ['insp-ci'],  // only schedule this job on environment with NODE_ENV = 'insp-ci'
+ *    start: true,
+ *    context: {
+ *        concurrency: 1
+ *    }
+ * },
+ * {
+ *    name: 'tellMood',
+ *    description: 'ask the user for a mood',
+ *    cronTime: '00 00  7,10,13 * * 1,2,3,4,5',
+ *    onTick: require('./batches/askForMoodEntry').run,
+ *    start: true,
+ *    context: {
+ *        concurrency: 1
+ *    }
+ * },
+ *
+ * uses this lib to schedule the jobs: https://github.com/ncb000gt/node-cron
+ *
+ * @param jobs
+ * @param log
+ * @param config
+ */
 var scheduleJobs = function scheduleJobs(jobs, log, config) {
 
     _.forEach(jobs, function scheduleJob(job) {
