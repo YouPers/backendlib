@@ -106,6 +106,9 @@ function addGenericRoutes(swagger, model, baseUrl, options, config) {
         op.params = [
             swagger.pathParam('id', 'ID of the ' + options.modelName + ' to be updated', 'string')];
         op.spec.nickname = 'delete' + _.capitalize(options.modelName);
+
+        // only allow al_admin to delete objects, if not explicitly specified differenty
+        op.spec.accessLevel = options.accessLevelDelete || 'al_admin';
         op.action = generic.deleteByIdFn(baseUrl, model);
         swagger.addOperation(op);
     }
@@ -119,6 +122,8 @@ function addGenericRoutes(swagger, model, baseUrl, options, config) {
         op.spec.notes = 'deletes all ' + options.modelName + 's owned by this user. If user has sysadm role: deletes all';
         op.spec.summary = 'delete all owned' + options.modelName + 's';
         op.spec.nickname = 'deleteAll' + _.capitalize(options.modelName);
+        // only allow al_admin to delete objects, if not explicitly specified differenty
+        op.spec.accessLevel = options.accessLevelDelete || 'al_admin';
         op.action = generic.deleteAllFn(baseUrl, model);
         swagger.addOperation(op);
     }
