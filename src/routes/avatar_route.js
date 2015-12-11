@@ -41,8 +41,8 @@ module.exports = function (swagger, config) {
             context.fillStyle = "#FFF";
             context.fillText(initials, width /2, height/1.5);
 
-            res.contentType = 'image/png';
-            res.send(canvas.toBuffer());
+            res.writeHead(200, { 'Content-Type': 'image/png'});
+            canvas.pngStream().pipe(res);
         }
     });
 };
