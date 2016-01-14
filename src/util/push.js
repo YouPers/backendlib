@@ -17,14 +17,29 @@ module.exports = function (config) {
     var androidSender, apnConnection;
     var log = require('./log').getLogger(config);
 
-    if (config.push && config.push.googlePushApiKey) {
+    if (config.push && config.push.unitTestOnly) {
+        androidSender = {
+            send: function mockSender(message, token, NR_OF_RETRIES, cb) {
+                process.nextTick(function() {
+                    return cb(null, {});
+                });
+            }
+        };
+        log.warn("PushMessaging: android UNIT TEST MODE");
+    } else if (config.push && config.push.googlePushApiKey) {
         androidSender = new gcm.Sender(config.push.googlePushApiKey);
         log.info("PushMessaging: android GCM ENABLED");
     } else {
-        throw new Error('cannot instantiate Push, google API Key not found in config');
+        log.info("PushMessaging: android GCM Push NOT enabled in config for this instance");
     }
 
-    if (config.push.appleApnCert && config.push.appleApnKey) {
+    if (config.push && config.push.unitTestOnly) {
+        apnConnection = {
+            on: _.noop,
+            pushNotification: _.noop
+        };
+        log.warn("PushMessaging: ios UNIT TEST MODE");
+    } else if (config.push.appleApnCert && config.push.appleApnKey) {
         var options = {
             cert: config.push.appleApnCert,
             key: config.push.appleApnKey,
@@ -36,7 +51,10 @@ module.exports = function (config) {
         apnConnection.on('transmissionError', function (errorCode, notification, device) {
             if (errorCode === 8) {
                 // this is an invalid token, we remove the device from the users profile
-                log.info({device: device.toString(), notification: notification}, "invalid token found, removing from user");
+                log.info({
+                    device: device.toString(),
+                    notification: notification
+                }, "invalid token found, removing from user");
                 return _removeInvalidIosDevice(device, function (err, result) {
                     if (err) {
                         log.error({
@@ -57,7 +75,10 @@ module.exports = function (config) {
         });
 
         apnConnection.on('transmitted', function (notification, device) {
-            log.debug({notification: notification, device: device.toString()}, "ios notification sucessfully transmitted");
+            log.debug({
+                notification: notification,
+                device: device.toString()
+            }, "ios notification sucessfully transmitted");
         });
 
         apnConnection.on('error', function (err) {
@@ -67,11 +88,24 @@ module.exports = function (config) {
         log.info("PushMessaging: ios apple apn ENABLED");
         log.info("PushMessaging: ios apple apn ENABLED");
     } else {
-        log.info("PushMessaging: ios apple apn messaging NOT enabled in config");
+        log.info("PushMessaging: ios apple apn messaging NOT enabled in config for this intance");
     }
 
     /////////////////////////////////////////////////////////////////////
     // internal helper functions
+
+    function _translateData(translationData, i18n) {
+        var myData = {};
+        _.each(translationData, function (value, key) {
+            if (key.indexOf('i18n' === 0)) {
+                var strippedKey = _.camelCase(key.substring(4));
+                myData[strippedKey] = i18n.t('general:' + strippedKey + '.' + value);
+            } else {
+                myData[key] = value;
+            }
+        });
+        return myData;
+    }
 
     function _personalizeData(data, user, translationData, cb) {
         var locale = _.get(user, 'profile.language') || _.get(config, 'i18n.fallbackLng', 'en');
@@ -89,7 +123,7 @@ module.exports = function (config) {
             _.forEach(myData, function (value, key) {
                 if (key.indexOf('i18n') === 0) {
                     delete myData[key];
-                    myData[_.camelCase(key.substring(4))] = i18n.t(value, translationData);
+                    myData[_.camelCase(key.substring(4))] = i18n.t(value, _translateData(translationData, i18n));
                 }
             });
             cb(null, myData);
@@ -203,22 +237,21 @@ module.exports = function (config) {
 
             userArray = _.isArray(userArray) ? userArray : [userArray];
 
-            var devices = {
+            var devicesToPushTo = {
                 android: {},
                 ios: {}
             };
 
             var notificationsToSave = [];
 
-
-            async.forEach(userArray, function (oneuser, done) {
+            async.forEach(userArray, function (oneuser, asyncDone) {
                 _.forEach(oneuser.profile.devices, function (device) {
                     if (device.deviceType === 'ios') {
-                        devices.ios[device.token] = oneuser;
+                        devicesToPushTo.ios[device.token] = oneuser;
                     } else if (device.deviceType === 'android') {
-                        devices.android[device.token] = oneuser;
+                        devicesToPushTo.android[device.token] = oneuser;
                     } else {
-                        return done(new Error('unkown deviceType: ' + device.deviceType));
+                        return asyncDone(new Error('unkown deviceType: ' + device.deviceType));
                     }
                 });
 
@@ -227,12 +260,12 @@ module.exports = function (config) {
                     status: 'unread'
                 }).exec(function (err, unreadCount) {
                     if (err) {
-                        return done(err);
+                        return asyncDone(err);
                     }
                     log.debug({unreadCount: unreadCount, user: oneuser.username}, 'Got unread notifications count');
                     _personalizeData(data, oneuser, translationData, function (err, myData) {
                         if (err) {
-                            return done(err);
+                            return asyncDone(err);
                         }
                         myData.unreadCount = unreadCount + 1;
                         oneuser.myData = myData;
@@ -254,23 +287,53 @@ module.exports = function (config) {
                         };
                         notificationsToSave.push(myNotification);
                         oneuser.notificationId = myNotification._id;
-                        return done();
+                        return asyncDone();
                     });
                 });
             }, function (err) {
                 if (err) {
                     return cb(err);
                 }
-                _sendAndroidMessages(devices.android, _sendAndroidCb);
+
+                _sendAndroidMessages(devicesToPushTo.android, function _sendAndroidCb(err, androidResult) {
+                    if (err) {
+                        log.error({err: err}, "error happened in 'sendAndroid");
+                        return cb(err);
+                    }
+
+                    _sendIosMessages(devicesToPushTo.ios, function (err, iosResult) {
+                        if (err) {
+                            log.error({err: err}, "error happened in 'sendAndroid");
+                            return cb(err);
+                        }
+                        log.debug({notsToSave: notificationsToSave}, "saving notifications");
+                        mongoose.model('Notification').create(notificationsToSave, function (err) {
+                            if (err) {
+                                return cb(err);
+                            }
+                            return cb(null, {android: androidResult, ios: iosResult});
+                        });
+                    });
+                });
 
             });
 
+
             function _sendAndroidMessages(androidDevices, done) {
+                if (!androidSender) {
+                    return done(null, {result: "android GCM  push not enabled on this server instance"});
+                }
+
                 if (_.keys(androidDevices).length === 0) {
                     return done(null, {result: "no android devices found for this user"});
                 }
 
-                async.forEachOf(androidDevices, function (user, token, cb) {
+                var androidResult = {
+                    sent: [],
+                    errored: 0
+                };
+
+                async.forEachOf(androidDevices, function (user, token, asyncCb) {
                     var myData = user.myData;
                     myData.notificationId = user.notificationId;
 
@@ -284,26 +347,31 @@ module.exports = function (config) {
                     log.trace({data: myData, user: user.username || user.email || user.id}, "sending push message");
                     return androidSender.send(message, token, NR_OF_RETRIES, function (err, result) {
                         if (err) {
-                            return cb(err);
+                            return asyncCb(err);
                         }
-
 
                         if (result.failure > 0 && result.results[0].error === 'NotRegistered') {
                             log.trace(result, "android signaled a NotRegistred Error for this device, we remove it from the DB");
-                            return _removeDeviceFromUserProfile(user.profile, token, cb);
+                            androidResult.errored++;
+                            return _removeDeviceFromUserProfile(user.profile, token, asyncCb);
                         }
+                        androidResult.sent.push(message);
 
                         log.trace({
                             result: result,
                             user: user.username || user.email || user.id
                         }, "android gcm push message(s) sent");
-                        return cb(null, result);
+                        return asyncCb(null);
                     });
-                }, done);
-
+                }, function (err) {
+                    return done(err, androidResult);
+                });
             }
 
             function _sendIosMessages(iosDevices, done) {
+                if (!apnConnection) {
+                    return done(null, {result: "ios push not enabled on this server instance"});
+                }
                 if (_.keys(iosDevices).length === 0) {
                     return done(null, {result: "no ios devices found for this user"});
                 }
@@ -339,35 +407,6 @@ module.exports = function (config) {
                     user: userArray.username || userArray.email || userArray.id
                 }, "ios apple push message(s) sent");
                 return done(null, result);
-            }
-
-            function _sendAndroidCb(err, androidResult) {
-                if (err) {
-                    return cb(err);
-                }
-                if (apnConnection) {
-                    _sendIosMessages(devices.ios, function (err, iosResult) {
-                        if (err) {
-                            return cb(err);
-                        }
-                        log.debug({notsToSave: notificationsToSave}, "saving notifications");
-                        mongoose.model('Notification').create(notificationsToSave, function (err) {
-                            if (err) {
-                                return cb(err);
-                            }
-                            return cb(null, {android: androidResult, ios: iosResult});
-                        });
-                    });
-                } else {
-                    log.debug({notsToSave: notificationsToSave}, "saving notifications");
-                    mongoose.model('Notification').create(notificationsToSave, function (err) {
-                        if (err) {
-                            return cb(err);
-                        }
-                        return cb(null, {android: androidResult, ios: 'not enabled on server'});
-                    });
-
-                }
             }
         }
 
