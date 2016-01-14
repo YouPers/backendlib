@@ -21,7 +21,9 @@ module.exports = function (config) {
         androidSender = {
             send: function mockSender(message, token, NR_OF_RETRIES, cb) {
                 process.nextTick(function() {
-                    return cb(null, {});
+                    return cb(null, {
+                        result: 'UNIT TEST Mock Sender, nothing has been sent'
+                    });
                 });
             }
         };
@@ -107,6 +109,39 @@ module.exports = function (config) {
         return myData;
     }
 
+    /**
+     * returns a personalized copy of the data for the intended recipient. Main purpose is to translate all i18n texts
+     * of the message into the language of the user.
+     *
+     * Determines a user's preferred language and translates the message texts using the supplied dynamic
+     * translation data. Any key of 'data' that starts with 'i18n...' is replaced with its translated value while
+     * stripping the 'i18n'-Prefix from the key.
+     *
+     * While translating variables in the text-segments are replaced by values from translationData. The
+     * recipient himself with his populated profile is added automatically to translationData to easily allow
+     * targeted messages like 'Hello __user.firstname__' -> 'Hello John'.
+     *
+     * If a key in translationData starts with 'i18n' the dynamic value itself is passed through translation first.
+     * This allows translated code/enum variables in segements, e.g.
+     *
+     * segment: 'Neuer Kommentar in Kategorie:  __category__'
+     *
+     * translationData: {i18nCategory: 'shopping'}
+     *
+     * translationSources.de: {
+     * category: {
+     *      shopping: 'Einkaufen',
+     *      driving: 'Autofahren'
+     * }}
+     *
+     * result:   'Neuer Kommenar in Kategorie: Einkaufen'
+     *
+     * @param data
+     * @param user
+     * @param translationData
+     * @param cb
+     * @private
+     */
     function _personalizeData(data, user, translationData, cb) {
         var locale = _.get(user, 'profile.language') || _.get(config, 'i18n.fallbackLng', 'en');
         log.trace({user: user, locale: locale}, "using this locale");
@@ -160,7 +195,6 @@ module.exports = function (config) {
 
     ////////////////////////////////////////
     // Main entry point
-
     function sendPush(user, data, collapseKey, translationData, cb) {
         // this function takes one of those options as the first parameter
         // - an object or an array of objects of the following types:
@@ -245,6 +279,7 @@ module.exports = function (config) {
             var notificationsToSave = [];
 
             async.forEach(userArray, function (oneuser, asyncDone) {
+
                 _.forEach(oneuser.profile.devices, function (device) {
                     if (device.deviceType === 'ios') {
                         devicesToPushTo.ios[device.token] = oneuser;
@@ -290,20 +325,18 @@ module.exports = function (config) {
                         return asyncDone();
                     });
                 });
+
+
             }, function (err) {
                 if (err) {
                     return cb(err);
                 }
 
-                _sendAndroidMessages(devicesToPushTo.android, function _sendAndroidCb(err, androidResult) {
-                    if (err) {
-                        log.error({err: err}, "error happened in 'sendAndroid");
-                        return cb(err);
-                    }
-
-                    _sendIosMessages(devicesToPushTo.ios, function (err, iosResult) {
+                async.parallel([
+                    _sendAndroidMessages.bind(null, devicesToPushTo.android),
+                    _sendIosMessages.bind(null, devicesToPushTo.ios)
+                ], function (err, results) {
                         if (err) {
-                            log.error({err: err}, "error happened in 'sendAndroid");
                             return cb(err);
                         }
                         log.debug({notsToSave: notificationsToSave}, "saving notifications");
@@ -311,104 +344,103 @@ module.exports = function (config) {
                             if (err) {
                                 return cb(err);
                             }
-                            return cb(null, {android: androidResult, ios: iosResult});
+                            return cb(null, {android: results[0], ios: results[1]});
                         });
-                    });
                 });
-
             });
+        }
 
-
-            function _sendAndroidMessages(androidDevices, done) {
-                if (!androidSender) {
-                    return done(null, {result: "android GCM  push not enabled on this server instance"});
-                }
-
-                if (_.keys(androidDevices).length === 0) {
-                    return done(null, {result: "no android devices found for this user"});
-                }
-
-                var androidResult = {
-                    sent: [],
-                    errored: 0
-                };
-
-                async.forEachOf(androidDevices, function (user, token, asyncCb) {
-                    var myData = user.myData;
-                    myData.notificationId = user.notificationId;
-
-                    var ttl = data.expires ? moment(data.expires).diff(moment(), 'seconds') : TIME_TO_LIVE;
-                    var message = new gcm.Message({
-                        timeToLive: ttl,
-                        delayWhileIdle: true,
-                        collapseKey: collapseKey || 'messages',
-                        data: myData
-                    });
-                    log.trace({data: myData, user: user.username || user.email || user.id}, "sending push message");
-                    return androidSender.send(message, token, NR_OF_RETRIES, function (err, result) {
-                        if (err) {
-                            return asyncCb(err);
-                        }
-
-                        if (result.failure > 0 && result.results[0].error === 'NotRegistered') {
-                            log.trace(result, "android signaled a NotRegistred Error for this device, we remove it from the DB");
-                            androidResult.errored++;
-                            return _removeDeviceFromUserProfile(user.profile, token, asyncCb);
-                        }
-                        androidResult.sent.push(message);
-
-                        log.trace({
-                            result: result,
-                            user: user.username || user.email || user.id
-                        }, "android gcm push message(s) sent");
-                        return asyncCb(null);
-                    });
-                }, function (err) {
-                    return done(err, androidResult);
-                });
+        function _sendAndroidMessages(androidDevices, done) {
+            if (!androidSender) {
+                return done(null, {result: "android GCM  push not enabled on this server instance"});
             }
 
-            function _sendIosMessages(iosDevices, done) {
-                if (!apnConnection) {
-                    return done(null, {result: "ios push not enabled on this server instance"});
-                }
-                if (_.keys(iosDevices).length === 0) {
-                    return done(null, {result: "no ios devices found for this user"});
-                }
-                var result = {
-                    sent: 0,
-                    errored: 0
-                };
-                _.forEach(iosDevices, function (user, token) {
-                    var note = new apn.Notification();
-                    var myData = user.myData;
-                    myData.notificationId = user.notificationId;
+            if (_.keys(androidDevices).length === 0) {
+                return done(null, {result: "no android devices found for this user"});
+            }
 
-                    note.expiry = (myData.expires && Math.floor(data.expires / 1000)) || (Math.floor(Date.now() / 1000) + TIME_TO_LIVE);
-                    note.badge = myData.unreadCount || 1;
-                    note.alert = myData.message || myData.description;
-                    note.payload = myData;
-                    try {
-                        var myDevice = new apn.Device(token);
-                        apnConnection.pushNotification(note, myDevice);
-                        result.sent++;
-                    } catch (err) {
-                        log.info({
-                            err: err,
-                            token: token,
-                            user: user.username || user.email || user.id
-                        }, "PushNotification: Error while sending ios Push");
-                        result.errored++;
+            var androidResult = {
+                sent: [],
+                errored: 0
+            };
+
+            async.forEachOf(androidDevices, function (user, token, asyncCb) {
+                var myData = user.myData;
+                myData.notificationId = user.notificationId;
+
+                var ttl = data.expires ? moment(data.expires).diff(moment(), 'seconds') : TIME_TO_LIVE;
+                var message = new gcm.Message({
+                    timeToLive: ttl,
+                    delayWhileIdle: true,
+                    collapseKey: collapseKey || 'messages',
+                    data: myData
+                });
+                log.trace({data: myData, user: user.username || user.email || user.id}, "sending push message");
+                return androidSender.send(message, token, NR_OF_RETRIES, function (err, result) {
+                    if (err) {
+                        return asyncCb(err);
                     }
 
+                    if (result.failure > 0 && result.results[0].error === 'NotRegistered') {
+                        log.trace(result, "android signaled a NotRegistred Error for this device, we remove it from the DB");
+                        androidResult.errored++;
+                        return _removeDeviceFromUserProfile(user.profile, token, asyncCb);
+                    }
+                    androidResult.sent.push(message);
+
+                    log.trace({
+                        result: result,
+                        user: user.username || user.email || user.id
+                    }, "android gcm push message(s) sent");
+                    return asyncCb(null);
                 });
-                log.trace({
-                    result: result,
-                    user: userArray.username || userArray.email || userArray.id
-                }, "ios apple push message(s) sent");
-                return done(null, result);
-            }
+            }, function (err) {
+                return done(err, androidResult);
+            });
         }
+
+
+        function _sendIosMessages(iosDevices, done) {
+            if (!apnConnection) {
+                return done(null, {result: "ios push not enabled on this server instance"});
+            }
+            if (_.keys(iosDevices).length === 0) {
+                return done(null, {result: "no ios devices found for this user"});
+            }
+            var result = {
+                sent: 0,
+                errored: 0
+            };
+            _.forEach(iosDevices, function (user, token) {
+                var note = new apn.Notification();
+                var myData = user.myData;
+                myData.notificationId = user.notificationId;
+
+                note.expiry = (myData.expires && Math.floor(data.expires / 1000)) || (Math.floor(Date.now() / 1000) + TIME_TO_LIVE);
+                note.badge = myData.unreadCount || 1;
+                note.alert = myData.message || myData.description;
+                note.payload = myData;
+                try {
+                    var myDevice = new apn.Device(token);
+                    apnConnection.pushNotification(note, myDevice);
+                    result.sent++;
+                } catch (err) {
+                    log.info({
+                        err: err,
+                        token: token,
+                        user: user.username || user.email || user.id
+                    }, "PushNotification: Error while sending ios Push");
+                    result.errored++;
+                }
+
+            });
+            log.trace({
+                result: result,
+                user: userArray.username || userArray.email || userArray.id
+            }, "ios apple push message(s) sent");
+            return done(null, result);
+        }
+
 
     }
 
