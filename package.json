@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "restify": "4.0.x",
-    "mongoose": "4.3.4",
+    "mongoose": "4.3.x",
     "mongoose-timestamp": "~0.5.x",
     "mongoose-eventify": "0.0.x",
     "longjohn": "0.2.x",
@@ -46,7 +46,7 @@
     "rimraf": "*",
     "bcrypt": "0.8.x",
     "aws-sdk": "2.2.x",
-    "canvas": "1.3.x"
+    "canvas": "1.3.6"
   },
   "devDependencies": {
     "grunt-contrib-jshint": "~0.11.x",
