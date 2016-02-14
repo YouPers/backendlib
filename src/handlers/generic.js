@@ -146,7 +146,7 @@ function _populate(schema, dbquery, paths, locale) {
     for (var i = paths.length; i--;) {
         var p = paths[i];
 
-        pparts = p.split(' ');
+        var pparts = p.split(' ');
         for (var j = pparts.length; j--;) {
             p = pparts[j];
 
