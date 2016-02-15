@@ -49,24 +49,6 @@ var hasProp = function (o) {
     return has.length && has;
 };
 
-function getsafe(obj, str) {
-    if (!obj) {
-        return null;
-    }
-    if (!Array.isArray(str)) {
-        return getsafe(obj, str.split('.'));
-    }
-
-    if (!str.length) {
-        return null;
-    }
-
-    var p = str.shift();
-    var n = (p in obj) ? obj[p] : null;
-    return str.length ? getsafe(n, str) : n;
-
-}
-
 var flatten = function (target, optsArg) {
     var output = {},
         opts = optsArg || {},
@@ -292,16 +274,12 @@ var _addFilter = function (queryParams, dbquery, Model) {
         return dbquery;
     }
 
-    var paths = getsafe(Model, 'options.display.list_fields');
-    if (!paths) {
-        paths = [];
-        Model.schema.eachPath(function (p, v) {
-            paths.push(p);
-        });
-    }
-
     _.each(flatten(queryParams.filter), function (queryValue, queryProperty) {
         var ret = /^([+,-])?(.*)/.exec(queryProperty);
+
+        // our flatten function is using keys like "propname.0" and "propname.1" if there are multiple
+        // filter clauses for the same property name. With this we get rid of the .x part
+        ret[2] = ret[2].split('.')[0];
 
         // translate the 'id' we use clientSide into the '_id' we use serverSide
         if (ret[2] === 'id') {
@@ -351,8 +329,10 @@ var _addFilter = function (queryParams, dbquery, Model) {
             }
             dbquery = dbquery[method](qp);
         } else {
-
-            dbquery = dbquery[method](ret[2], addOp(queryValue, String === type || 'String' === type, type));
+            var myOp = addOp(queryValue, String === type || 'String' === type, type);
+            var clause = {};
+            clause[ret[2]] = myOp;
+            dbquery = dbquery[method](clause);
         }
         // console.log(' v',v,' k',k,' ',obj);
 
