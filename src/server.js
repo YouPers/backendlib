@@ -42,10 +42,13 @@ module.exports = {
 
         // setting logging of request and response, uncaught errors
         server.pre(function (req, response, next) {
-            req.log.debug({
+            var path = (req.route && req.route.path) || req.url; // for req.method == OPTIONS the req.route is not available, so we log the url
+            var isPing = path.indexOf('ping/db') !== -1;
+
+            req.log[isPing ? 'trace' : 'debug']({
                 req_id: req.getId(),
                 req: req,
-                path: (req.route && req.router.path) || req.url,
+                path: path,
                 method: req.method
             }, 'start processing request');
             return next();
@@ -74,14 +77,16 @@ module.exports = {
         });
 
         server.on('after', function (req, res, route, err) {
-            req.log.info({
+            var path = (req.route && req.route.path) || req.url; // for req.method == OPTIONS the req.route is not available, so we log the url
+            var isPing = path.indexOf('ping/db') !== -1;
+            req.log[isPing ? 'trace' : 'info']({
                 method: req.method,
                 url: req.url,
                 statusCode: res.statusCode,
                 'x-real-ip': req.headers['x-real-ip'],
                 username: req.user && req.user.email,
                 responsetime: res.getHeader('Response-Time'),
-                path: (req.route && req.route.path) || req.url   // for req.method == OPTIONS the req.route is not available, so we log the url
+                path: path
             }, "finished processing request");
 
             if (err && !err.doNotLog) {
