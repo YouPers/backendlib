@@ -283,6 +283,8 @@ module.exports = function (config) {
                 if(isCampaignLead) {
                     dbQuery.select('+email');
                 }
+            } else {
+                dbQuery.select('+profile +email +username')
             }
 
             generic.processDbQueryOptions(req.query, dbQuery, User)
