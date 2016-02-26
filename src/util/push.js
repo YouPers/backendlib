@@ -114,7 +114,7 @@ module.exports = function (config) {
      * of the message into the language of the user.
      *
      * Determines a user's preferred language and translates the message texts using the supplied dynamic
-     * translation data. Any key of 'data' that starts with 'i18n...' is replaced with its translated value while
+     * translation data. Any key of 'data' that s tarts with 'i18n...' is replaced with its translated value while
      * stripping the 'i18n'-Prefix from the key.
      *
      * While translating variables in the text-segments are replaced by values from translationData. The

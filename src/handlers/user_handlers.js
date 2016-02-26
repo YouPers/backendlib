@@ -284,7 +284,7 @@ module.exports = function (config) {
                     dbQuery.select('+email');
                 }
             } else {
-                dbQuery.select('+profile +email +username')
+                dbQuery.select('+profile +email +username');
             }
 
             generic.processDbQueryOptions(req.query, dbQuery, User)
