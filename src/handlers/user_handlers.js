@@ -269,6 +269,7 @@ module.exports = function (config) {
         return function (req, res, next) {
 
             var isAdmin = auth.isAdminForModel(req.user, User);
+            var isProductAdmin = auth.checkAccess(req.user, auth.accessLevels.al_productadmin);
             var campaign = req.params.campaign || req.user.campaign && (req.user.campaign._id || req.user.campaign);
             var isCampaignLead = campaign && _.any(campaign.campaignLeads, function (campaignLead) {
                     return req.user._id.equals(campaignLead);
@@ -282,6 +283,9 @@ module.exports = function (config) {
                 }
                 if(isCampaignLead) {
                     dbQuery.select('+email');
+                }
+                if (isProductAdmin) {
+                    dbQuery.select('+profile');
                 }
             } else {
                 dbQuery.select('+profile +email +username');
